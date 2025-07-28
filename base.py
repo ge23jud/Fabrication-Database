@@ -37,11 +37,12 @@ IDdir_dic = {"sem": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\16_SEM",
              "mic": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\14_Microscope",
              "xrd": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\20_XRD",
              "tem": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\21_TEM", 
-             "mla": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\23_MLA"}
+             "mla": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\23_MLA",
+             "rie": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\23_RIE"}
                
-Sampledir_dic = {"sem": "SEM", "plm": "PL", "epi": "MBE", "elx": "Elionix", "mic": "Microscope", "xrd": "XRD", "tem": "TEM", "mla": "MLA"}
+Sampledir_dic = {"sem": "SEM", "plm": "PL", "epi": "MBE", "elx": "Elionix", "mic": "Microscope", "xrd": "XRD", "tem": "TEM", "mla": "MLA", "rie": "RIE"}
 
-SampleOverview_column_dic = {"sem": "R", "plm": "S", "epi": "O", "elx": "H", "mic": "Q", "xrd": "T", "tem": "U", "mla": "I"}
+SampleOverview_column_dic = {"sem": "S", "plm": "T", "epi": "P", "elx": "H", "mic": "R", "xrd": "U", "tem": "V", "mla": "I", "rie": "M"}
 
 
 def extract_ID_from_path(path):
