@@ -12,6 +12,7 @@ import re
 #import openpyxl
 from openpyxl import load_workbook
 import win32com.client
+from pathlib import Path
 
 # Enable ANSI escape codes on Windows
 kernel32 = ctypes.windll.kernel32
@@ -142,18 +143,17 @@ def write_to_cell(file_name, sheet_name, cell_address, value):
 
 def save_close_excel(file_path):
 
-    try:
-        excel = win32com.client.Dispatch("Excel.Application")
-        # Try to find and interact with the workbook if it's open
-        for workbook in excel.Workbooks:
-            if workbook.FullName == file_path:
-                workbook.Save()  # Save the workbook
-                workbook.Close()  # Close the workbook
-                print(f"Excel file '{file_path}' has been saved and closed.")
-                break
-        excel.Quit()
-    except Exception as e:
-        print(f"Error while interacting with Excel: {e}")
+    xl = win32com.client.GetActiveObject("Excel.Application")
+    
+    # Look for the workbook in open workbooks
+    for wb in xl.Workbooks:
+        if wb.FullName == file_path:
+            print(f"Sample Overview active")
+            wb.Save()  # Save before closing
+            wb.Close()
+            print(f"Closed Sample Overview")
+            break
+
         
         
 def reopen_excel(file_path):
@@ -162,10 +162,10 @@ def reopen_excel(file_path):
         excel = win32com.client.Dispatch("Excel.Application")
         excel.Visible = True  # Open Excel in visible mode
         excel.Workbooks.Open(file_path)
-        print(f"Excel file '{file_path}' has been reopened.")
+        print(f"Opened Sample Overview")
     except Exception as e:
-        print(f"Error while reopening Excel: {e}")
-
+        print(f"Error while opening Sample Overview")
+    
 
 def get_sample_index(spl_name):
     
