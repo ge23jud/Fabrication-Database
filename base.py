@@ -38,7 +38,7 @@ IDdir_dic = {"sem": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\16_SEM",
              "xrd": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\20_XRD",
              "tem": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\21_TEM", 
              "mla": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\23_MLA",
-             "rie": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\23_RIE"}
+             "rie": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\24_RIE"}
                
 Sampledir_dic = {"sem": "SEM", "plm": "PL", "epi": "MBE", "elx": "Elionix", "mic": "Microscope", "xrd": "XRD", "tem": "TEM", "mla": "MLA", "rie": "RIE"}
 
