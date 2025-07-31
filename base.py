@@ -193,8 +193,6 @@ def update_SampleOverview(ID, spl):
     column = get_column(ID)
     cell = column + row
     value = f"{date}, {ID}"
-    
-    
 
     save_close_excel(SampleOverview_dir)
     
@@ -362,7 +360,7 @@ def update(path):
         return
         
     oldpath = base[ID]["path"]
-    print(f"{BLUE}Do you really want to change the path of entry \"{ID}\" from \"{oldpath}\" to \"{path}\"? {GREEN}y{BLUE}\{RED}n{RESET}")
+    print(f"{BLUE}Do you really want to change the path of entry \"{ID}\" from \"{oldpath}\" to \"{path}\"? {GREEN}y{BLUE}{RED}n{RESET}")
  
     choice = input()
     if choice == "y":
@@ -566,6 +564,11 @@ def parse_arguments():
     parser_save_close_excel = subparsers.add_parser("save_close_excel", help="Save and close Sample Overview")
     parser_save_close_excel.add_argument("file_path", type=str, help="Path to Sample Overview")
 
+    # Subparser for update_SampleOverview
+    parser_update_SampleOverview = subparsers.add_parser("update_SampleOverview", help="Update SampleOverview")
+    parser_update_SampleOverview.add_argument("ID", type=str, help="process ID")
+    parser_update_SampleOverview.add_argument("spl", type=str, help="sample number")
+
     return parser.parse_args()    
        
 if __name__ == "__main__":
@@ -603,9 +606,13 @@ if __name__ == "__main__":
     elif args.function == "write_to_cell":
         write_to_cell(args.file_name, args.sheet_name, args.cell_address, args.value)
     elif args.function == "save_close_excel":
-        save_close_excel(args.file_path)   
+        save_close_excel(args.file_path)
+    elif args.function == "update_SampleOverview":
+        update_SampleOverview(args.ID, args.spl)
 
-#things to add
+
+
+    #things to add
 
 # edit path; check if path exists; search for Entry automatically
 # When ID path is updated, readme file should move as well
