@@ -253,8 +253,8 @@ def create(new_name, initial_path = r"I:\e24\SQN\Researchers\Haubmann Benjamin\0
     for x in result:
         shutil.copytree(new_path, x + "\\" + process + "\\" + new_name)
     
-    for match in valid_matches:
-        update_SampleOverview(ID, match)
+    #for match in valid_matches:
+    #    update_SampleOverview(ID, match)
     
     
         
