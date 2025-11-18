@@ -1,3 +1,9 @@
+# todo:
+
+#update readme funktioniert nicht
+#make path both sample path and process path
+
+
 import argparse
 import pickle
 import os
