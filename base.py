@@ -249,7 +249,7 @@ def migrate_tags():
         spl_name = None
         for key in base.keys():
             if "spl" in key and key in sample_folder:
-                spl_name = key
+                spl_name = sample_folder[9:]  # strip YYYYMMDD- prefix
                 break
         if spl_name is None:
             continue
@@ -293,6 +293,24 @@ def migrate_tags():
         pickle.dump(base, file)
 
     print(f"{GREEN}Migration complete: {registered} tag(s) registered, {skipped} skipped{RESET}")
+
+
+def fix_tag_names():
+    with open(IDbase_dir, 'rb') as file:
+        base = pickle.load(file)
+
+    renamed = 0
+    for ID in base.keys():
+        tag_dict = base[ID].get("tags", {})
+        to_rename = {k: k[9:] for k in list(tag_dict.keys()) if re.match(r'^\d{8}-', k)}
+        for old_key, new_key in to_rename.items():
+            tag_dict[new_key] = tag_dict.pop(old_key)
+            renamed += 1
+
+    with open(IDbase_dir, 'wb') as file:
+        pickle.dump(base, file)
+
+    print(f"{GREEN}Renamed {renamed} tag(s){RESET}")
 
 
 def list_tags(ID):
@@ -877,6 +895,9 @@ def parse_arguments():
     # Subparser for migrate_tags
     parser_migrate_tags = subparsers.add_parser("migrate_tags", help="Scan sample folders and register existing copies as tags")
 
+    # Subparser for fix_tag_names
+    parser_fix_tag_names = subparsers.add_parser("fix_tag_names", help="Rename tags from full date-spl format to spl-only")
+
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -929,6 +950,8 @@ if __name__ == "__main__":
         list_tags(args.ID)
     elif args.function == "migrate_tags":
         migrate_tags()
+    elif args.function == "fix_tag_names":
+        fix_tag_names()
 
 
 
