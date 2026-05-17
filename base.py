@@ -295,6 +295,25 @@ def migrate_tags():
     print(f"{GREEN}Migration complete: {registered} tag(s) registered, {skipped} skipped{RESET}")
 
 
+def untagged():
+    with open(IDbase_dir, 'rb') as file:
+        base = pickle.load(file)
+
+    exclude = {"sim", "scr", "ana"}
+    result = []
+    for ID in base.keys():
+        if any(ex in ID for ex in exclude):
+            continue
+        if not base[ID].get("tags"):
+            result.append(ID)
+
+    if not result:
+        print(f"{GREEN}All IDs have at least one tag{RESET}")
+    else:
+        for ID in sorted(result):
+            print(f"{MAGENTA}{ID}{RESET}")
+
+
 def fix_tag_names():
     with open(IDbase_dir, 'rb') as file:
         base = pickle.load(file)
@@ -898,6 +917,9 @@ def parse_arguments():
     # Subparser for fix_tag_names
     parser_fix_tag_names = subparsers.add_parser("fix_tag_names", help="Rename tags from full date-spl format to spl-only")
 
+    # Subparser for untagged
+    parser_untagged = subparsers.add_parser("untagged", help="List all IDs without tags (excludes sim, scr, ana)")
+
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -952,6 +974,8 @@ if __name__ == "__main__":
         migrate_tags()
     elif args.function == "fix_tag_names":
         fix_tag_names()
+    elif args.function == "untagged":
+        untagged()
 
 
 
