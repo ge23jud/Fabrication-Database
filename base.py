@@ -532,18 +532,45 @@ def checkall():
     with open(IDbase_dir, 'rb') as file:
         base = pickle.load(file)
 
-    invalid_list = []
-
-    for ID in base.keys():
-        if not path_is_valid(ID):
-            invalid_list.append(ID)
+    invalid_list = [ID for ID in base.keys() if not os.path.exists(base[ID]["path"])]
 
     if len(invalid_list) == 0:
-        print(f"{GREEN}Everythings seems up to date{RESET}")
-    else:
-        print(f"{RED}Invalid path found for the following entries:{RESET}")
-        for ID in invalid_list:
-            print(f"{RED}{ID}{RESET}")
+        print(f"{GREEN}Everything seems up to date{RESET}")
+        return
+
+    print(f"{RED}Invalid path found for {len(invalid_list)} entrie(s). Searching...{RESET}\n")
+
+    for ID in invalid_list:
+        expected_dir = None
+        for key in IDdir_dic.keys():
+            if key in ID:
+                expected_dir = IDdir_dic[key]
+                break
+
+        if expected_dir is None or not os.path.exists(expected_dir):
+            print(f"{RED}{ID}{RESET} — could not determine expected directory, skipping")
+            continue
+
+        matches = [f for f in os.listdir(expected_dir) if f[:16] == ID and os.path.isdir(os.path.join(expected_dir, f))]
+
+        if not matches:
+            print(f"{RED}{ID}{RESET} — not found in {expected_dir}, skipping")
+            continue
+
+        for match in matches:
+            new_path = os.path.join(expected_dir, match)
+            print(f"{YELLOW}{ID}{RESET} — found at: {new_path}")
+            print(f"{BLUE}Update path? {GREEN}y{BLUE}/{RED}n{RESET}")
+            choice = input()
+            if choice == "y":
+                base[ID]["path"] = new_path
+                with open(IDbase_dir, 'wb') as file:
+                    pickle.dump(base, file)
+                with open(IDbase_dir, 'rb') as file:
+                    base = pickle.load(file)
+                print(f"{GREEN}Path updated{RESET}")
+            else:
+                print(f"{YELLOW}Skipped{RESET}")
 
 
 def update(path):
