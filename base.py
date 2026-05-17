@@ -231,6 +231,19 @@ def migrate_tags():
 
             for id_folder in os.listdir(process_folder_path):
                 if not os.path.isdir(os.path.join(process_folder_path, id_folder)):
+                    # check for loose readme files indicating unwrapped data
+                    if id_folder.endswith("_readme.txt"):
+                        ID = id_folder[:16]
+                        if not ID_exists(ID, base) or spl_name in base[ID].get("tags", {}):
+                            skipped += 1
+                            continue
+                        folder_name = os.path.basename(base[ID]["path"])
+                        copy_path = os.path.join(process_folder_path, folder_name)
+                        if "tags" not in base[ID]:
+                            base[ID]["tags"] = {}
+                        base[ID]["tags"][spl_name] = copy_path
+                        print(f"{YELLOW}Found loose files for \"{ID}\" in \"{spl_name}\" → folder will be created at {copy_path} on next sync{RESET}")
+                        registered += 1
                     continue
                 ID = id_folder[:16]
                 if not ID_exists(ID, base):
