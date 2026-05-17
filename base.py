@@ -234,10 +234,15 @@ def migrate_tags():
                 if spl_name in base[ID].get("tags", {}):
                     skipped += 1
                     continue
-                tag(ID, spl_name)
-                with open(IDbase_dir, 'rb') as file:
-                    base = pickle.load(file)
+                copy_path = os.path.join(process_folder_path, id_folder)
+                if "tags" not in base[ID]:
+                    base[ID]["tags"] = {}
+                base[ID]["tags"][spl_name] = copy_path
+                print(f"{GREEN}Tagged \"{ID}\" with \"{spl_name}\" → {copy_path}{RESET}")
                 registered += 1
+
+    with open(IDbase_dir, 'wb') as file:
+        pickle.dump(base, file)
 
     print(f"{GREEN}Migration complete: {registered} tag(s) registered, {skipped} skipped{RESET}")
 
