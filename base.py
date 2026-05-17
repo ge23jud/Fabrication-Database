@@ -116,7 +116,10 @@ def sync_all():
         if tag_dict:
             source = base[ID]["path"]
             for spl_name, copy_path in tag_dict.items():
-                if os.path.exists(copy_path):
+                if os.path.exists(copy_path) and not os.path.isdir(copy_path):
+                    print(f"{YELLOW}Skipping \"{spl_name}\" for \"{ID}\": copy path is a file, not a folder — please fix tag manually{RESET}")
+                    continue
+                if os.path.isdir(copy_path):
                     shutil.rmtree(copy_path)
                 shutil.copytree(source, copy_path)
                 synced += 1
