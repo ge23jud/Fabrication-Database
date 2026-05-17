@@ -209,9 +209,12 @@ def untag(ID, spl_name):
     print(f"{BLUE}Delete the copy at \"{copy_path}\"? {GREEN}y{BLUE}/{RED}n{RESET}")
     choice = input()
     if choice == "y":
-        if os.path.exists(copy_path):
+        if os.path.isdir(copy_path):
             shutil.rmtree(copy_path)
             print(f"{GREEN}Deleted copy{RESET}")
+        elif os.path.isfile(copy_path):
+            os.remove(copy_path)
+            print(f"{GREEN}Deleted file{RESET}")
         else:
             print(f"{YELLOW}Copy path does not exist, skipping deletion{RESET}")
     elif choice == "n":
