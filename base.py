@@ -95,7 +95,10 @@ def sync_folder(ID):
     source = base[ID]["path"]
     count = 0
     for spl_name, copy_path in tag_dict.items():
-        if os.path.exists(copy_path):
+        if os.path.exists(copy_path) and not os.path.isdir(copy_path):
+            print(f"{YELLOW}Skipping \"{spl_name}\": copy path is a file, not a folder — please fix tag manually{RESET}")
+            continue
+        if os.path.isdir(copy_path):
             shutil.rmtree(copy_path)
         shutil.copytree(source, copy_path)
         count += 1
@@ -227,6 +230,8 @@ def migrate_tags():
                 continue
 
             for id_folder in os.listdir(process_folder_path):
+                if not os.path.isdir(os.path.join(process_folder_path, id_folder)):
+                    continue
                 ID = id_folder[:16]
                 if not ID_exists(ID, base):
                     skipped += 1
