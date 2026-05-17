@@ -299,7 +299,7 @@ def untagged():
     with open(IDbase_dir, 'rb') as file:
         base = pickle.load(file)
 
-    exclude = {"sim", "scr", "ana"}
+    exclude = {"sim", "scr", "ana", "spl", "des"}
     result = []
     for ID in base.keys():
         if any(ex in ID for ex in exclude):
