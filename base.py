@@ -198,6 +198,50 @@ def untag(ID, spl_name):
     print(f"{GREEN}Tag \"{spl_name}\" removed from \"{ID}\"{RESET}")
 
 
+def migrate_tags():
+    basepath = r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\11_Samples"
+
+    with open(IDbase_dir, 'rb') as file:
+        base = pickle.load(file)
+
+    reverse_subdir = {v: k for k, v in Sampledir_dic.items()}
+    registered = 0
+    skipped = 0
+
+    for sample_folder in os.listdir(basepath):
+        sample_folder_path = os.path.join(basepath, sample_folder)
+        if not os.path.isdir(sample_folder_path):
+            continue
+
+        spl_name = None
+        for key in base.keys():
+            if "spl" in key and key in sample_folder:
+                spl_name = key
+                break
+        if spl_name is None:
+            continue
+
+        for process_folder in os.listdir(sample_folder_path):
+            process_folder_path = os.path.join(sample_folder_path, process_folder)
+            if not os.path.isdir(process_folder_path) or process_folder not in reverse_subdir:
+                continue
+
+            for id_folder in os.listdir(process_folder_path):
+                ID = id_folder[:16]
+                if not ID_exists(ID, base):
+                    skipped += 1
+                    continue
+                if spl_name in base[ID].get("tags", {}):
+                    skipped += 1
+                    continue
+                tag(ID, spl_name)
+                with open(IDbase_dir, 'rb') as file:
+                    base = pickle.load(file)
+                registered += 1
+
+    print(f"{GREEN}Migration complete: {registered} tag(s) registered, {skipped} skipped{RESET}")
+
+
 def list_tags(ID):
     with open(IDbase_dir, 'rb') as file:
         base = pickle.load(file)
@@ -750,6 +794,9 @@ def parse_arguments():
     parser_tags = subparsers.add_parser("tags", help="List tags for an ID")
     parser_tags.add_argument("ID", type=str, help="ID whose tags to list")
 
+    # Subparser for migrate_tags
+    parser_migrate_tags = subparsers.add_parser("migrate_tags", help="Scan sample folders and register existing copies as tags")
+
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -800,6 +847,8 @@ if __name__ == "__main__":
         sync_all()
     elif args.function == "tags":
         list_tags(args.ID)
+    elif args.function == "migrate_tags":
+        migrate_tags()
 
 
 
