@@ -121,7 +121,31 @@ def sync_all():
                 shutil.copytree(source, copy_path)
                 synced += 1
 
-    print(f"{GREEN}Synced {synced} copy/copies across all IDs{RESET}")
+    basepath = r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\11_Samples"
+    cleaned = 0
+    if os.path.exists(basepath):
+        for sample_folder in os.listdir(basepath):
+            sample_folder_path = os.path.join(basepath, sample_folder)
+            if not os.path.isdir(sample_folder_path):
+                continue
+            for process_folder in os.listdir(sample_folder_path):
+                process_folder_path = os.path.join(sample_folder_path, process_folder)
+                if not os.path.isdir(process_folder_path):
+                    continue
+                for item in os.listdir(process_folder_path):
+                    item_path = os.path.join(process_folder_path, item)
+                    if not os.path.isfile(item_path):
+                        continue
+                    ID = item[:16]
+                    if not ID_exists(ID, base):
+                        continue
+                    for spl_name, copy_path in base[ID].get("tags", {}).items():
+                        if os.path.dirname(copy_path) == process_folder_path and os.path.isdir(copy_path):
+                            os.remove(item_path)
+                            cleaned += 1
+                            break
+
+    print(f"{GREEN}Synced {synced} copy/copies, removed {cleaned} loose file(s){RESET}")
 
 
 def tag(ID, spl_name):
