@@ -1,6 +1,5 @@
 # todo:
 
-#update readme funktioniert nicht
 #make path both sample path and process path
 
 
@@ -607,10 +606,21 @@ def update_readme_single(ID):
     with open(IDbase_dir, 'rb') as file:
         base = pickle.load(file)
 
-    with open(base[ID]["path"]+"\\"+ID+"_readme.txt", 'r') as readme:
+    readme_path = base[ID]["path"] + "\\" + ID + "_readme.txt"
+
+    if not os.path.exists(readme_path):
+        print(f"{YELLOW}Skipping \"{ID}\": readme not found{RESET}")
+        return False
+
+    with open(readme_path, 'r') as readme:
         content = readme.read()
 
-    info_new, comments_new = [y.strip() for y in content.split("#"*70)]
+    parts = [y.strip() for y in content.split("#"*70)]
+    if len(parts) != 2:
+        print(f"{YELLOW}Skipping \"{ID}\": unexpected readme format ({len(parts)} section(s) found){RESET}")
+        return False
+
+    info_new, comments_new = parts
     base[ID]["info"] = info_new
     base[ID]["comments"] = comments_new
 
@@ -618,6 +628,7 @@ def update_readme_single(ID):
         pickle.dump(base, file)
 
     sync_folder(ID)
+    return True
 
 
 
@@ -626,10 +637,15 @@ def update_readme():
     with open(IDbase_dir, 'rb') as file:
         base = pickle.load(file)
 
+    ok = 0
+    skipped = 0
     for ID in base.keys():
-        update_readme_single(ID)
+        if update_readme_single(ID):
+            ok += 1
+        else:
+            skipped += 1
 
-    print(f"{GREEN}Updated sucessfully{RESET}")
+    print(f"{GREEN}Updated {ok} readme(s){RESET}" + (f", skipped {skipped}" if skipped else ""))
 
 
 
@@ -669,7 +685,7 @@ def comment(ID):
     with open(base[ID]["path"]+"\\"+ID+"_readme.txt", 'a') as readme:
         readme.write(comment)
 
-    sync_folder(ID)
+    update_readme_single(ID)
 
     print(f"{GREEN}Comment added{RESET}")
 
@@ -689,6 +705,25 @@ def inspect(ID):
     print(content)
 
 
+def edit_readme(ID):
+
+    with open(IDbase_dir, 'rb') as file:
+        base = pickle.load(file)
+
+    if not ID_exists(ID, base):
+        print(f"{RED}Invalid ID{RESET}")
+        return
+
+    readme_path = base[ID]["path"] + "\\" + ID + "_readme.txt"
+
+    if not os.path.exists(readme_path):
+        print(f"{RED}Readme not found: {readme_path}{RESET}")
+        return
+
+    subprocess.run(['notepad', readme_path])
+
+    update_readme_single(ID)
+    print(f"{GREEN}Readme saved and synced{RESET}")
 
 
 
@@ -734,6 +769,10 @@ def parse_arguments():
     # Subparser for inspect
     parser_inspect = subparsers.add_parser("inspect", help="Call inspect")
     parser_inspect.add_argument("ID", type=str, help="ID whose readme is to show")
+
+    # Subparser for edit_readme
+    parser_edit_readme = subparsers.add_parser("edit_readme", help="Open readme in text editor and sync on close")
+    parser_edit_readme.add_argument("ID", type=str, help="ID whose readme to edit")
 
     # Subparser for create
     parser_create = subparsers.add_parser("create", help="Create ID dir from folder and sort automatically")
@@ -813,6 +852,8 @@ if __name__ == "__main__":
         comment(args.ID)
     elif args.function == "inspect":
         inspect(args.ID)
+    elif args.function == "edit_readme":
+        edit_readme(args.ID)
     elif args.function == "create":
         create(args.new_name)
     elif args.function == "new_sample":
