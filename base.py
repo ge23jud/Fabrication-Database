@@ -6,6 +6,7 @@
 import argparse
 import pickle
 import os
+import re
 from datetime import datetime
 import sys
 import ctypes
@@ -759,6 +760,162 @@ def edit_readme(ID):
 
 
 
+def _get_excel_row(row_num):
+    """Return (headers, row_data) dicts keyed by column letter, or (None, None) on failure."""
+    paths_to_try = [
+        SampleOverview_dir,
+        r"\\nas.ads.mwn.de\tuze\wsi\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\Sample Overview Local.xlsx",
+        r"C:\Users\ge23jud\OneDrive - TUM\Sample Overview.xlsx",
+    ]
+    for path in paths_to_try:
+        try:
+            wb = load_workbook(path, data_only=True)
+            ws = wb[sheet_name]
+            headers = {cell.column_letter: cell.value for cell in ws[1] if cell.value is not None}
+            row_data = {cell.column_letter: cell.value for cell in ws[row_num] if cell.value is not None}
+            return headers, row_data
+        except Exception:
+            continue
+    return None, None
+
+
+def info(query):
+    with open(IDbase_dir, 'rb') as file:
+        base = pickle.load(file)
+
+    matches = [ID for ID in base.keys() if query in ID]
+
+    if not matches:
+        print(f"{RED}No entry found matching \"{query}\"{RESET}")
+        return
+
+    samples_sorted = sorted(k for k in base.keys() if "spl" in k)
+
+    if "spl" in query:
+        for spl_ID in sorted(matches):
+            entry_data = base[spl_ID]
+            print(f"\n{BLUE}{'='*60}{RESET}")
+            print(f"{MAGENTA}{spl_ID}{RESET}")
+            print(f"{BLUE}{'='*60}{RESET}")
+            print(f"{YELLOW}Path:{RESET} {entry_data['path']}")
+            print(f"\n{YELLOW}Info:{RESET}\n{entry_data['info']}")
+            if entry_data.get('comments', '').strip():
+                print(f"\n{YELLOW}Comments:{RESET}\n{entry_data['comments']}")
+
+            tagged_processes = []
+            for ID, data in base.items():
+                if "spl" in ID:
+                    continue
+                for tag_key in data.get("tags", {}):
+                    if query in tag_key:
+                        tagged_processes.append((ID, data, data["tags"][tag_key]))
+                        break
+
+            if tagged_processes:
+                print(f"\n{YELLOW}Tagged processes ({len(tagged_processes)}):{RESET}")
+                for proc_ID, proc_data, copy_path in sorted(tagged_processes):
+                    process_type = get_process_subdir(proc_ID) or "?"
+                    path_status = f"{GREEN}ok{RESET}" if os.path.exists(proc_data['path']) else f"{RED}missing{RESET}"
+                    print(f"\n  {MAGENTA}{proc_ID}{RESET} ({process_type}) [{path_status}]")
+                    print(f"  {YELLOW}Path:{RESET} {proc_data['path']}")
+                    if proc_data['info'].strip():
+                        print(f"  {YELLOW}Info:{RESET} {proc_data['info']}")
+            else:
+                print(f"\n{YELLOW}No processes tagged to this sample{RESET}")
+
+            spl_idx = next((i for i, k in enumerate(samples_sorted) if query in k), None)
+            if spl_idx is not None:
+                headers, row_data = _get_excel_row(spl_idx + 2)
+                if headers is not None and row_data:
+                    col_by_header = {v: k for k, v in headers.items()}
+
+                    def _epi_from_col(rd, col_name):
+                        col = col_by_header.get(col_name)
+                        if col and col in rd:
+                            m = re.search(r'(?i)epi[-]?(\d+)', str(rd[col]))
+                            return f"EPI-{m.group(1)}" if m else None
+                        return None
+
+                    growth_origin = []
+
+                    epi = _epi_from_col(row_data, "Growth")
+                    if epi:
+                        growth_origin.append(f"{epi} (sample is growth wafer)")
+
+                    nw_col = col_by_header.get("NW Transfer")
+                    if nw_col and nw_col in row_data:
+                        nw_val = str(row_data[nw_col])
+                        if 'from' in nw_val.lower():
+                            m = re.search(r'(?i)epi[-]?(\d+)', nw_val)
+                            if m:
+                                growth_origin.append(f"EPI-{m.group(1)} (NWs transferred from)")
+
+                    cleaved_col = col_by_header.get("Cleaved From")
+                    if cleaved_col and cleaved_col in row_data:
+                        parent = str(row_data[cleaved_col]).strip()
+                        if parent.lower() not in ('unknown', ''):
+                            parent_idx = next((i for i, k in enumerate(samples_sorted) if parent in k), None)
+                            if parent_idx is not None:
+                                p_headers, p_row = _get_excel_row(parent_idx + 2)
+                                if p_headers and p_row:
+                                    p_col_by_header = {v: k for k, v in p_headers.items()}
+                                    p_growth_col = p_col_by_header.get("Growth")
+                                    if p_growth_col and p_growth_col in p_row:
+                                        m = re.search(r'(?i)epi[-]?(\d+)', str(p_row[p_growth_col]))
+                                        if m:
+                                            growth_origin.append(f"EPI-{m.group(1)} (cleaved from {parent})")
+
+                    keep = {"Type", "eSAE", "Ellipsometry", "Clean", "Spin-Coating",
+                            "Development", "HF 1", "HF 2", "NW Transfer", "Design", "Cleaved"}
+                    print(f"\n{YELLOW}Sample Overview:{RESET}")
+                    for origin in growth_origin:
+                        print(f"  {YELLOW}Growth origin:{RESET} {origin}")
+                    for col_letter, value in row_data.items():
+                        col_name = headers.get(col_letter, col_letter)
+                        if col_name in keep:
+                            display = ' | '.join(p.strip() for p in str(value).split('\n\n') if p.strip())
+                            print(f"  {YELLOW}{col_name}:{RESET} {display}")
+                elif headers is None:
+                    print(f"\n{YELLOW}Sample Overview not accessible{RESET}")
+    else:
+        for proc_ID in sorted(matches):
+            entry_data = base[proc_ID]
+            process_type = get_process_subdir(proc_ID) or "?"
+            path_status = f"{GREEN}ok{RESET}" if os.path.exists(entry_data['path']) else f"{RED}missing{RESET}"
+            print(f"\n{BLUE}{'='*60}{RESET}")
+            print(f"{MAGENTA}{proc_ID}{RESET} ({process_type}) [{path_status}]")
+            print(f"{BLUE}{'='*60}{RESET}")
+            print(f"{YELLOW}Path:{RESET} {entry_data['path']}")
+            print(f"\n{YELLOW}Info:{RESET}\n{entry_data['info']}")
+            if entry_data.get('comments', '').strip():
+                print(f"\n{YELLOW}Comments:{RESET}\n{entry_data['comments']}")
+
+            tag_dict = entry_data.get("tags", {})
+            if tag_dict:
+                print(f"\n{YELLOW}Tagged to:{RESET}")
+                for spl_name, copy_path in tag_dict.items():
+                    copy_status = f"{GREEN}ok{RESET}" if os.path.exists(copy_path) else f"{RED}missing{RESET}"
+                    print(f"  {MAGENTA}{spl_name}{RESET} → {copy_path} [{copy_status}]")
+            else:
+                print(f"\n{YELLOW}Not tagged to any sample{RESET}")
+
+            proc_key = next((k for k in IDdir_dic if k in proc_ID), None)
+            excel_col = SampleOverview_column_dic.get(proc_key)
+            if excel_col and tag_dict:
+                excel_entries = []
+                for spl_name in tag_dict:
+                    spl_idx = next((i for i, k in enumerate(samples_sorted) if spl_name in k), None)
+                    if spl_idx is not None:
+                        headers, row_data = _get_excel_row(spl_idx + 2)
+                        if headers is not None and excel_col in row_data:
+                            col_name = headers.get(excel_col, excel_col)
+                            excel_entries.append((spl_name, col_name, row_data[excel_col]))
+                if excel_entries:
+                    print(f"\n{YELLOW}Sample Overview:{RESET}")
+                    for spl_name, col_name, cell_val in excel_entries:
+                        print(f"  {MAGENTA}{spl_name}{RESET} — {col_name}: {str(cell_val).strip()}")
+
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Call individual functions from the command line.')
     subparsers = parser.add_subparsers(dest='function', required=True)
@@ -856,6 +1013,10 @@ def parse_arguments():
     # Subparser for untagged
     parser_untagged = subparsers.add_parser("untagged", help="List all IDs without tags (excludes sim, scr, ana)")
 
+    # Subparser for info
+    parser_info = subparsers.add_parser("info", help="Show all information about a sample or process entry")
+    parser_info.add_argument("query", type=str, help="Sample name (e.g. spl2407) or process number (e.g. epi1780)")
+
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -908,6 +1069,8 @@ if __name__ == "__main__":
         list_tags(args.ID)
     elif args.function == "untagged":
         untagged()
+    elif args.function == "info":
+        info(args.query)
 
 
 
