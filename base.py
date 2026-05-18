@@ -300,6 +300,21 @@ class entry:
             subprocess.run(['notepad', f"{self.path}\\{self.ID}_readme.txt"])
             update_readme_single(self.ID)
 
+        excluded = {"des", "sim", "scr", "ana"}
+        if not any(ex in self.ID for ex in excluded):
+            while True:
+                print(f"{BLUE}Which samples are involved? Enter sample names separated by commas (e.g. spl01,spl02), or press Enter to skip:{RESET}")
+                sample_input = input().strip()
+                if sample_input:
+                    for spl_name in [s.strip() for s in sample_input.split(",") if s.strip()]:
+                        tag(self.ID, spl_name)
+                    break
+                else:
+                    print(f"{BLUE}No samples entered. Confirm no sample was involved? {GREEN}y{BLUE}/{RED}n{RESET}")
+                    confirm = input().strip()
+                    if confirm == "y":
+                        break
+
 
 def new_sample(spl_name):
 
@@ -448,12 +463,6 @@ def create(new_name, initial_path = r"I:\e24\SQN\Researchers\Haubmann Benjamin\0
 
     add(new_path)
 
-    print(f"{BLUE}Which samples are involved? Enter sample names separated by commas (e.g. spl01,spl02), or press Enter to skip:{RESET}")
-    sample_input = input().strip()
-    if sample_input:
-        for spl_name in [s.strip() for s in sample_input.split(",") if s.strip()]:
-            tag(ID, spl_name)
-
 
 
 def add(path):
@@ -489,6 +498,7 @@ def delete(ID):
     choice = input()
     if choice == "y":
 
+        deleted_copy_paths = set()
         if tag_dict:
             print(f"{BLUE}Also delete {len(tag_dict)} sample folder copy/copies? {GREEN}y{BLUE}/{RED}n{RESET}")
             copy_choice = input()
@@ -496,7 +506,23 @@ def delete(ID):
                 for spl_name, copy_path in tag_dict.items():
                     if os.path.exists(copy_path):
                         shutil.rmtree(copy_path)
+                        deleted_copy_paths.add(copy_path)
                         print(f"{GREEN}Deleted copy for \"{spl_name}\"{RESET}")
+
+        print(f"{BLUE}Also delete the readme file? {GREEN}y{BLUE}/{RED}n{RESET}")
+        readme_choice = input()
+        if readme_choice == "y":
+            readme_path = base[ID]["path"] + "\\" + ID + "_readme.txt"
+            if os.path.exists(readme_path):
+                os.remove(readme_path)
+                print(f"{GREEN}Deleted readme from main path{RESET}")
+            for spl_name, copy_path in tag_dict.items():
+                if copy_path in deleted_copy_paths:
+                    continue
+                tagged_readme = copy_path + "\\" + ID + "_readme.txt"
+                if os.path.exists(tagged_readme):
+                    os.remove(tagged_readme)
+                    print(f"{GREEN}Deleted readme from \"{spl_name}\" copy{RESET}")
 
         del base[ID]
         with open(IDbase_dir, 'wb') as file:
