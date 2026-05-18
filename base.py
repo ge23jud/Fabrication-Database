@@ -300,7 +300,7 @@ class entry:
             subprocess.run(['notepad', f"{self.path}\\{self.ID}_readme.txt"])
             update_readme_single(self.ID)
 
-        excluded = {"des", "sim", "scr", "ana"}
+        excluded = {"des", "sim", "scr", "ana", "spl"}
         if not any(ex in self.ID for ex in excluded):
             while True:
                 print(f"{BLUE}Which samples are involved? Enter sample names separated by commas (e.g. spl01,spl02), or press Enter to skip:{RESET}")
