@@ -14,7 +14,6 @@ import subprocess
 import tkinter as tk
 from tkinter import filedialog
 import shutil
-import re
 #import openpyxl
 from openpyxl import load_workbook
 import win32com.client
@@ -231,69 +230,6 @@ def untag(ID, spl_name):
     print(f"{GREEN}Tag \"{spl_name}\" removed from \"{ID}\"{RESET}")
 
 
-def migrate_tags():
-    basepath = r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\11_Samples"
-
-    with open(IDbase_dir, 'rb') as file:
-        base = pickle.load(file)
-
-    reverse_subdir = {v: k for k, v in Sampledir_dic.items()}
-    registered = 0
-    skipped = 0
-
-    for sample_folder in os.listdir(basepath):
-        sample_folder_path = os.path.join(basepath, sample_folder)
-        if not os.path.isdir(sample_folder_path):
-            continue
-
-        spl_name = None
-        for key in base.keys():
-            if "spl" in key and key in sample_folder:
-                spl_name = sample_folder[9:]  # strip YYYYMMDD- prefix
-                break
-        if spl_name is None:
-            continue
-
-        for process_folder in os.listdir(sample_folder_path):
-            process_folder_path = os.path.join(sample_folder_path, process_folder)
-            if not os.path.isdir(process_folder_path) or process_folder not in reverse_subdir:
-                continue
-
-            for id_folder in os.listdir(process_folder_path):
-                if not os.path.isdir(os.path.join(process_folder_path, id_folder)):
-                    # check for loose readme files indicating unwrapped data
-                    if id_folder.endswith("_readme.txt"):
-                        ID = id_folder[:16]
-                        if not ID_exists(ID, base) or spl_name in base[ID].get("tags", {}):
-                            skipped += 1
-                            continue
-                        folder_name = os.path.basename(base[ID]["path"])
-                        copy_path = os.path.join(process_folder_path, folder_name)
-                        if "tags" not in base[ID]:
-                            base[ID]["tags"] = {}
-                        base[ID]["tags"][spl_name] = copy_path
-                        print(f"{YELLOW}Found loose files for \"{ID}\" in \"{spl_name}\" → folder will be created at {copy_path} on next sync{RESET}")
-                        registered += 1
-                    continue
-                ID = id_folder[:16]
-                if not ID_exists(ID, base):
-                    skipped += 1
-                    continue
-                if spl_name in base[ID].get("tags", {}):
-                    skipped += 1
-                    continue
-                copy_path = os.path.join(process_folder_path, id_folder)
-                if "tags" not in base[ID]:
-                    base[ID]["tags"] = {}
-                base[ID]["tags"][spl_name] = copy_path
-                print(f"{GREEN}Tagged \"{ID}\" with \"{spl_name}\" → {copy_path}{RESET}")
-                registered += 1
-
-    with open(IDbase_dir, 'wb') as file:
-        pickle.dump(base, file)
-
-    print(f"{GREEN}Migration complete: {registered} tag(s) registered, {skipped} skipped{RESET}")
-
 
 def untagged():
     with open(IDbase_dir, 'rb') as file:
@@ -313,23 +249,6 @@ def untagged():
         for ID in sorted(result):
             print(f"{MAGENTA}{ID}{RESET}")
 
-
-def fix_tag_names():
-    with open(IDbase_dir, 'rb') as file:
-        base = pickle.load(file)
-
-    renamed = 0
-    for ID in base.keys():
-        tag_dict = base[ID].get("tags", {})
-        to_rename = {k: k[9:] for k in list(tag_dict.keys()) if re.match(r'^\d{8}-', k)}
-        for old_key, new_key in to_rename.items():
-            tag_dict[new_key] = tag_dict.pop(old_key)
-            renamed += 1
-
-    with open(IDbase_dir, 'wb') as file:
-        pickle.dump(base, file)
-
-    print(f"{GREEN}Renamed {renamed} tag(s){RESET}")
 
 
 def list_tags(ID):
@@ -601,16 +520,6 @@ def ls():
         print(f"{MAGENTA}{ID}{RESET}")
 
 
-def path_is_valid(ID):
-
-    with open(IDbase_dir, 'rb') as file:
-        base = pickle.load(file)
-
-    if not os.path.exists(base[ID]["path"]):
-        return False
-    else:
-        return True
-
 
 def checkall():
 
@@ -723,19 +632,6 @@ def update_readme():
     print(f"{GREEN}Updated sucessfully{RESET}")
 
 
-def find(ID):
-
-    with open(IDbase_dir, 'rb') as file:
-        base = pickle.load(file)
-
-    if not ID in base.keys():
-        print(f"{RED}Invalid ID{RESET}")
-        return
-
-    print(f"{GREEN}Searching for path of entry \"{ID}\" in PhD folder...{RESET}")
-    for root, dirs, files in os.walk(r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD"):
-        continue
-
 
 def display(type_):
 
@@ -793,25 +689,6 @@ def inspect(ID):
     print(content)
 
 
-def runpy(ID): # not operational
-
-    with open(IDbase_dir, 'rb') as file:
-        base = pickle.load(file)
-
-    if not ID in base.keys():
-        print(f"{RED}Invalid ID{RESET}")
-        return
-
-    folder_path = base[ID]["path"]
-    all_items = os.listdir(folder_path)
-
-    for item in all_items:
-        file_path = f"{folder_path}\\{item}"
-        if ID in item and ".py" in item:
-            print(file_path)
-            subprocess.run(['python', file_path])
-            return
-
 
 
 
@@ -857,10 +734,6 @@ def parse_arguments():
     # Subparser for inspect
     parser_inspect = subparsers.add_parser("inspect", help="Call inspect")
     parser_inspect.add_argument("ID", type=str, help="ID whose readme is to show")
-
-    # Subparser for runpy
-    parser_runpy = subparsers.add_parser("runpy", help="Call runpy")
-    parser_runpy.add_argument("ID", type=str, help="ID to run script")
 
     # Subparser for create
     parser_create = subparsers.add_parser("create", help="Create ID dir from folder and sort automatically")
@@ -911,12 +784,6 @@ def parse_arguments():
     parser_tags = subparsers.add_parser("tags", help="List tags for an ID")
     parser_tags.add_argument("ID", type=str, help="ID whose tags to list")
 
-    # Subparser for migrate_tags
-    parser_migrate_tags = subparsers.add_parser("migrate_tags", help="Scan sample folders and register existing copies as tags")
-
-    # Subparser for fix_tag_names
-    parser_fix_tag_names = subparsers.add_parser("fix_tag_names", help="Rename tags from full date-spl format to spl-only")
-
     # Subparser for untagged
     parser_untagged = subparsers.add_parser("untagged", help="List all IDs without tags (excludes sim, scr, ana)")
 
@@ -946,8 +813,6 @@ if __name__ == "__main__":
         comment(args.ID)
     elif args.function == "inspect":
         inspect(args.ID)
-    elif args.function == "runpy":
-        runpy(args.ID)
     elif args.function == "create":
         create(args.new_name)
     elif args.function == "new_sample":
@@ -970,10 +835,6 @@ if __name__ == "__main__":
         sync_all()
     elif args.function == "tags":
         list_tags(args.ID)
-    elif args.function == "migrate_tags":
-        migrate_tags()
-    elif args.function == "fix_tag_names":
-        fix_tag_names()
     elif args.function == "untagged":
         untagged()
 
