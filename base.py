@@ -615,9 +615,9 @@ def update_readme_single(ID):
     with open(readme_path, 'r') as readme:
         content = readme.read()
 
-    parts = [y.strip() for y in content.split("#"*70)]
+    parts = [y.strip() for y in content.split("#"*70, 1)]
     if len(parts) != 2:
-        print(f"{YELLOW}Skipping \"{ID}\": unexpected readme format ({len(parts)} section(s) found){RESET}")
+        print(f"{YELLOW}Skipping \"{ID}\": readme has no separator, cannot parse{RESET}")
         return False
 
     info_new, comments_new = parts
