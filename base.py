@@ -290,11 +290,15 @@ class entry:
 
         base[self.ID] = {"path": self.path, "info": info, "comments": "", "tags": {}}
 
-
         with open(IDbase_dir, 'wb') as file:
             pickle.dump(base, file)
 
         print(f"{GREEN}Entry \"{self.ID}\" has been added{RESET}")
+
+        if "des" in self.ID:
+            print(f"{BLUE}Paste the creation code into the editor window and save when done{RESET}")
+            subprocess.run(['notepad', f"{self.path}\\{self.ID}_readme.txt"])
+            update_readme_single(self.ID)
 
 
 def new_sample(spl_name):
