@@ -921,6 +921,7 @@ def info(query):
                     epi_num = epi_m.group(1)
                     grown_spls = set()
                     cleaved_map = {}
+                    type_map = {}
                     nw_epi_spls = []
                     nw_spl_map = {}
                     for i, spl_key in enumerate(samples_sorted):
@@ -940,21 +941,29 @@ def info(query):
                             parent_val = str(rdata[c_col]).strip()
                             if parent_val and parent_val.lower() != 'unknown':
                                 cleaved_map[spl_short] = parent_val
+                        t_col = cbh.get("Type")
+                        if t_col and t_col in rdata:
+                            type_map[spl_short] = str(rdata[t_col])
                         nw_col = cbh.get("NW Transfer")
                         if nw_col and nw_col in rdata:
                             nw_val = str(rdata[nw_col])
                             if 'from' in nw_val.lower():
+                                bracket_m = re.search(r'\(([^)]+)\)', nw_val)
+                                field_info = bracket_m.group(1) if bracket_m else None
                                 if re.search(rf'(?i)epi[-]?{epi_num}\b', nw_val):
-                                    nw_epi_spls.append(spl_short)
+                                    nw_epi_spls.append((spl_short, field_info))
                                 else:
                                     nw_src_m = re.search(r'spl\d+', nw_val, re.IGNORECASE)
                                     if nw_src_m:
-                                        nw_spl_map[spl_short] = nw_src_m.group(0).lower()
+                                        nw_spl_map[spl_short] = (nw_src_m.group(0).lower(), field_info)
                     seen_d = set(tag_dict.keys())
                     derived = []
-                    for s in nw_epi_spls:
+                    for s, field_info in nw_epi_spls:
                         if s not in seen_d:
-                            derived.append((s, "NW transfer from this wafer"))
+                            label = "NW transfer from this wafer"
+                            if field_info:
+                                label += f" ({field_info})"
+                            derived.append((s, label))
                             seen_d.add(s)
                     cleaved_pieces = set()
                     for s, parent_val in cleaved_map.items():
@@ -962,12 +971,19 @@ def info(query):
                         if parent_short_m and parent_short_m.group(0).lower() in {g.lower() for g in grown_spls}:
                             cleaved_pieces.add(s)
                             if s not in seen_d:
-                                derived.append((s, f"cleaved from {parent_val}"))
+                                label = f"cleaved from {parent_val}"
+                                field_m = re.search(r'Growth Wafer cleaved\s*\(([^)]+)\)', type_map.get(s, ""), re.IGNORECASE)
+                                if field_m:
+                                    label += f" ({field_m.group(1)})"
+                                derived.append((s, label))
                                 seen_d.add(s)
-                    for s, src in nw_spl_map.items():
+                    for s, (src, field_info) in nw_spl_map.items():
                         if s not in seen_d and src in {c.lower() for c in cleaved_pieces}:
                             src_parent = cleaved_map.get(src, "?")
-                            derived.append((s, f"NW transfer from {src} (cleaved from {src_parent})"))
+                            label = f"NW transfer from {src} (cleaved from {src_parent})"
+                            if field_info:
+                                label += f" — {field_info}"
+                            derived.append((s, label))
                             seen_d.add(s)
                     if derived:
                         print(f"\n{YELLOW}Derived samples:{RESET}")
