@@ -915,6 +915,65 @@ def info(query):
                     for spl_name, col_name, cell_val in excel_entries:
                         print(f"  {MAGENTA}{spl_name}{RESET} — {col_name}: {str(cell_val).strip()}")
 
+            if "epi" in proc_ID:
+                epi_m = re.search(r'epi[-]?(\d+)', proc_ID)
+                if epi_m:
+                    epi_num = epi_m.group(1)
+                    grown_spls = set()
+                    cleaved_map = {}
+                    nw_epi_spls = []
+                    nw_spl_map = {}
+                    for i, spl_key in enumerate(samples_sorted):
+                        spl_m = re.search(r'spl(\d+)', spl_key)
+                        if not spl_m:
+                            continue
+                        spl_short = "spl" + spl_m.group(1)
+                        hdrs, rdata = _get_excel_row(i + 2)
+                        if hdrs is None:
+                            continue
+                        cbh = {v: k for k, v in hdrs.items()}
+                        g_col = cbh.get("Growth")
+                        if g_col and g_col in rdata and re.search(rf'(?i)epi[-]?{epi_num}\b', str(rdata[g_col])):
+                            grown_spls.add(spl_short)
+                        c_col = cbh.get("Cleaved From")
+                        if c_col and c_col in rdata:
+                            parent_val = str(rdata[c_col]).strip()
+                            if parent_val and parent_val.lower() != 'unknown':
+                                cleaved_map[spl_short] = parent_val
+                        nw_col = cbh.get("NW Transfer")
+                        if nw_col and nw_col in rdata:
+                            nw_val = str(rdata[nw_col])
+                            if 'from' in nw_val.lower():
+                                if re.search(rf'(?i)epi[-]?{epi_num}\b', nw_val):
+                                    nw_epi_spls.append(spl_short)
+                                else:
+                                    nw_src_m = re.search(r'spl\d+', nw_val, re.IGNORECASE)
+                                    if nw_src_m:
+                                        nw_spl_map[spl_short] = nw_src_m.group(0).lower()
+                    seen_d = set(tag_dict.keys())
+                    derived = []
+                    for s in nw_epi_spls:
+                        if s not in seen_d:
+                            derived.append((s, "NW transfer from this wafer"))
+                            seen_d.add(s)
+                    cleaved_pieces = set()
+                    for s, parent_val in cleaved_map.items():
+                        parent_short_m = re.search(r'spl\d+', parent_val, re.IGNORECASE)
+                        if parent_short_m and parent_short_m.group(0).lower() in {g.lower() for g in grown_spls}:
+                            cleaved_pieces.add(s)
+                            if s not in seen_d:
+                                derived.append((s, f"cleaved from {parent_val}"))
+                                seen_d.add(s)
+                    for s, src in nw_spl_map.items():
+                        if s not in seen_d and src in {c.lower() for c in cleaved_pieces}:
+                            src_parent = cleaved_map.get(src, "?")
+                            derived.append((s, f"NW transfer from {src} (cleaved from {src_parent})"))
+                            seen_d.add(s)
+                    if derived:
+                        print(f"\n{YELLOW}Derived samples:{RESET}")
+                        for s, rel in sorted(derived):
+                            print(f"  {MAGENTA}{s}{RESET} — {rel}")
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Call individual functions from the command line.')
