@@ -16,7 +16,6 @@ from tkinter import filedialog
 import shutil
 #import openpyxl
 from openpyxl import load_workbook
-import win32com.client
 from pathlib import Path
 
 # Enable ANSI escape codes on Windows
@@ -34,11 +33,6 @@ MAGENTA = '\033[95m'
 IDbase_dir = r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\IDbase"
 
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.txt")
-WRITE_COMMANDS = {
-    "add", "delete", "update", "update_readme", "comment", "edit_readme",
-    "create", "new_sample", "tag", "untag", "sync", "sync_all",
-    "update_SampleOverview", "write_to_cell", "save_close_excel", "reopen_excel",
-}
 
 def get_access_level():
     if not os.path.exists(CONFIG_PATH):
@@ -372,44 +366,6 @@ def convert_date_format(date_str):
     return f"{day}.{month}.{year}"
 
 
-def write_to_cell(file_name, sheet_name, cell_address, value):
-
-    workbook = load_workbook(file_name)
-    sheet = workbook[sheet_name]
-
-    existing_value = sheet[cell_address].value
-    if existing_value == None:
-        sheet[cell_address] = value
-    else:
-        sheet[cell_address] = (str(sheet[cell_address].value) or "") + "\n\n" + value
-    workbook.save(file_name)
-    print(f"Value '{value}' written to {cell_address} in sheet '{sheet_name}' of '{file_name}'.")
-
-def save_close_excel(file_path):
-
-    xl = win32com.client.GetActiveObject("Excel.Application")
-
-    # Look for the workbook in open workbooks
-    for wb in xl.Workbooks:
-        if wb.FullName == file_path:
-            print(f"Sample Overview active")
-            wb.Save()  # Save before closing
-            wb.Close()
-            print(f"Closed Sample Overview")
-            break
-
-
-
-def reopen_excel(file_path):
-
-    try:
-        excel = win32com.client.Dispatch("Excel.Application")
-        excel.Visible = True  # Open Excel in visible mode
-        excel.Workbooks.Open(file_path)
-        print(f"Opened Sample Overview")
-    except Exception as e:
-        print(f"Error while opening Sample Overview")
-
 
 def get_sample_index(spl_name):
 
@@ -426,28 +382,6 @@ def get_sample_index(spl_name):
             index += 1
     print("No matching sample found")
 
-
-def update_SampleOverview(ID, spl):
-
-    date = convert_date_format(ID[:8])
-    print(get_sample_index(spl))
-    row = str(get_sample_index(spl) + 2)
-    print(row)
-    column = get_column(ID)
-    cell = column + row
-    value = f"{date}, {ID}"
-
-    save_close_excel(SampleOverview_dir)
-
-    write_to_cell(SampleOverview_dir, sheet_name, cell, value)
-
-    # In case of Elionix process: Write design-ID in column "R"
-    if "elx" in ID:
-        design_ID = input("Design-ID: ")
-        design_cell = "R" + row
-        write_to_cell(SampleOverview_dir, sheet_name, design_cell, design_ID)
-
-    reopen_excel(SampleOverview_dir)
 
 
 def get_column(ID):
@@ -1009,117 +943,76 @@ def info(query):
                             print(f"  {MAGENTA}{s}{RESET} — {rel}")
 
 
-def parse_arguments():
+def parse_arguments(access):
     parser = argparse.ArgumentParser(description='Call individual functions from the command line.')
     subparsers = parser.add_subparsers(dest='function', required=True)
 
-    # Subparser for add
-    parser_add = subparsers.add_parser('add', help='Call add')
-    parser_add.add_argument('path', type=str, help='folder path of the entry to add')
+    # Read-only subparsers (always available)
+    parser_ls = subparsers.add_parser('ls', help='List all IDs in the database')
 
-    # Subparser for goto
-    parser_goto = subparsers.add_parser("goto", help="Call goto")
-    parser_goto.add_argument("ID", type=str, help="ID which should be opened")
+    parser_display = subparsers.add_parser("display", help="<type> — Display entries and descriptions filtered by type (e.g. epi, sem, spl, all)")
+    parser_display.add_argument("type_", type=str, help="Process type to filter by (e.g. epi, sem, spl) or 'all'")
 
-    # Subparser for ls
-    parser_ls = subparsers.add_parser('ls', help='Call ls')
+    parser_inspect = subparsers.add_parser("inspect", help="<ID> — Print the raw readme file for an entry")
+    parser_inspect.add_argument("ID", type=str, help="16-character entry ID (e.g. 20240715epi1780)")
 
-    # Subparser for delete
-    parser_delete = subparsers.add_parser("delete", help="Call delete")
-    parser_delete.add_argument("ID", type=str, help="ID which should be deleted")
+    parser_info = subparsers.add_parser("info", help="<query> — Show full info for a sample or process entry (e.g. spl2407 or epi1780)")
+    parser_info.add_argument("query", type=str, help="Short sample or process identifier (e.g. spl2407 or epi1780)")
 
-    # Subparser for checkall
-    parser_checkall = subparsers.add_parser('checkall', help='Call checkall')
+    parser_tags = subparsers.add_parser("tags", help="<ID> — List all sample tags for an entry")
+    parser_tags.add_argument("ID", type=str, help="16-character entry ID (e.g. 20240715epi1780)")
 
-    # Subparser for update
-    parser_update = subparsers.add_parser("update", help="Call update")
-    parser_update.add_argument("path", type=str, help="path which should be updated")
+    parser_untagged = subparsers.add_parser("untagged", help="List all process entries not yet tagged to any sample")
 
-    # Subparser for display
-    parser_display = subparsers.add_parser("display", help="Call display")
-    parser_display.add_argument("type_", type=str, help="type of entries to be displayed")
+    parser_goto = subparsers.add_parser("goto", help="<ID> — Open the folder for an entry in Explorer")
+    parser_goto.add_argument("ID", type=str, help="16-character entry ID (e.g. 20240715epi1780)")
 
-    # Subparser for update_readme
-    parser_update_readme = subparsers.add_parser('update_readme', help='Call update_readme')
+    # Owner-only subparsers
+    if access == "owner":
+        parser_checkall = subparsers.add_parser('checkall', help='Check all stored paths and offer to fix broken ones')
 
-    # Subparser for comment
-    parser_comment = subparsers.add_parser("comment", help="Call comment")
-    parser_comment.add_argument("ID", type=str, help="Comment to add")
+        parser_add = subparsers.add_parser('add', help='<path> — Add a new entry from an existing folder path')
+        parser_add.add_argument('path', type=str, help='Full path to the folder to register (e.g. I:\\...\\20240715epi1780)')
 
-    # Subparser for inspect
-    parser_inspect = subparsers.add_parser("inspect", help="Call inspect")
-    parser_inspect.add_argument("ID", type=str, help="ID whose readme is to show")
+        parser_delete = subparsers.add_parser("delete", help="<ID> — Remove an entry from the database")
+        parser_delete.add_argument("ID", type=str, help="16-character entry ID to delete (e.g. 20240715epi1780)")
 
-    # Subparser for edit_readme
-    parser_edit_readme = subparsers.add_parser("edit_readme", help="Open readme in text editor and sync on close")
-    parser_edit_readme.add_argument("ID", type=str, help="ID whose readme to edit")
+        parser_update = subparsers.add_parser("update", help="<path> — Update the stored folder path for an existing entry")
+        parser_update.add_argument("path", type=str, help="New full path to the entry folder")
 
-    # Subparser for create
-    parser_create = subparsers.add_parser("create", help="Create ID dir from folder and sort automatically")
-    parser_create.add_argument("new_name", type=str, help="name of the ID folder")
+        parser_update_readme = subparsers.add_parser('update_readme', help='Sync all readme files into the database')
 
-    # Subparser for new_sample
-    parser_new_sample = subparsers.add_parser("new_sample", help="Create new sample")
-    parser_new_sample.add_argument("spl_name", type=str, help="Sample name")
+        parser_comment = subparsers.add_parser("comment", help="<ID> — Append a timestamped comment to an entry's readme")
+        parser_comment.add_argument("ID", type=str, help="16-character entry ID to comment on (e.g. 20240715epi1780)")
 
-    # Subparser for reopen_excel
-    parser_reopen_excel = subparsers.add_parser("reopen_excel", help="Open Sample Overview")
-    parser_reopen_excel.add_argument("file_path", type=str, help="Path to Sample Overview")
+        parser_edit_readme = subparsers.add_parser("edit_readme", help="<ID> — Open an entry's readme in Notepad and sync on close")
+        parser_edit_readme.add_argument("ID", type=str, help="16-character entry ID (e.g. 20240715epi1780)")
 
-    # Subparser for write_to_cell
-    parser_write_to_cell = subparsers.add_parser("write_to_cell", help="Write value to excel cell")
-    parser_write_to_cell.add_argument("file_name", type=str, help="Name of excel file")
-    parser_write_to_cell.add_argument("sheet_name", type=str, help="Name of excel sheet")
-    parser_write_to_cell.add_argument("cell_address", type=str, help="Which cell to write to")
-    parser_write_to_cell.add_argument("value", type=str, help="What to write to cell")
+        parser_create = subparsers.add_parser("create", help="<new_name> — Rename and sort a folder into the correct process directory, then add it")
+        parser_create.add_argument("new_name", type=str, help="New folder name starting with the 16-character ID (e.g. 20240715epi1780_description)")
 
-    # Subparser for save_close_excel
-    parser_save_close_excel = subparsers.add_parser("save_close_excel", help="Save and close Sample Overview")
-    parser_save_close_excel.add_argument("file_path", type=str, help="Path to Sample Overview")
+        parser_new_sample = subparsers.add_parser("new_sample", help="<spl_name> — Create a new sample folder with standard subfolders and add it")
+        parser_new_sample.add_argument("spl_name", type=str, help="Short sample name without date prefix (e.g. spl2407)")
 
-    # Subparser for update_SampleOverview
-    parser_update_SampleOverview = subparsers.add_parser("update_SampleOverview", help="Update SampleOverview")
-    parser_update_SampleOverview.add_argument("ID", type=str, help="process ID")
-    parser_update_SampleOverview.add_argument("spl", type=str, help="sample number")
+        parser_tag = subparsers.add_parser("tag", help="<ID> <spl_name> — Link a process entry to a sample folder and copy data there")
+        parser_tag.add_argument("ID", type=str, help="16-character process ID to tag (e.g. 20240715epi1780)")
+        parser_tag.add_argument("spl_name", type=str, help="Short sample name to link to (e.g. spl2407)")
 
-    # Subparser for tag
-    parser_tag = subparsers.add_parser("tag", help="Tag an ID with a sample")
-    parser_tag.add_argument("ID", type=str, help="Process ID to tag")
-    parser_tag.add_argument("spl_name", type=str, help="Sample name to tag with")
+        parser_untag = subparsers.add_parser("untag", help="<ID> <spl_name> — Remove a sample link from a process entry")
+        parser_untag.add_argument("ID", type=str, help="16-character process ID to untag (e.g. 20240715epi1780)")
+        parser_untag.add_argument("spl_name", type=str, help="Short sample name to unlink (e.g. spl2407)")
 
-    # Subparser for untag
-    parser_untag = subparsers.add_parser("untag", help="Remove a sample tag from an ID")
-    parser_untag.add_argument("ID", type=str, help="Process ID to untag")
-    parser_untag.add_argument("spl_name", type=str, help="Sample name to remove")
+        parser_sync = subparsers.add_parser("sync", help="<ID> — Copy an entry's folder to all tagged sample locations")
+        parser_sync.add_argument("ID", type=str, help="16-character entry ID to sync (e.g. 20240715epi1780)")
 
-    # Subparser for sync
-    parser_sync = subparsers.add_parser("sync", help="Sync ID folder to all tagged sample copies")
-    parser_sync.add_argument("ID", type=str, help="ID to sync")
-
-    # Subparser for sync_all
-    parser_sync_all = subparsers.add_parser("sync_all", help="Sync all tagged ID folders to their sample copies")
-
-    # Subparser for tags
-    parser_tags = subparsers.add_parser("tags", help="List tags for an ID")
-    parser_tags.add_argument("ID", type=str, help="ID whose tags to list")
-
-    # Subparser for untagged
-    parser_untagged = subparsers.add_parser("untagged", help="List all IDs without tags (excludes sim, scr, ana)")
-
-    # Subparser for info
-    parser_info = subparsers.add_parser("info", help="Show all information about a sample or process entry")
-    parser_info.add_argument("query", type=str, help="Sample name (e.g. spl2407) or process number (e.g. epi1780)")
+        parser_sync_all = subparsers.add_parser("sync_all", help="Sync all tagged entries to their sample locations")
 
     return parser.parse_args()
 
 if __name__ == "__main__":
 
-    args = parse_arguments()
-
     access = get_access_level()
-    if args.function in WRITE_COMMANDS and access != "owner":
-        print(f"{RED}This action is restricted to the owner. Only the owner can make changes to the database.{RESET}")
-        sys.exit(1)
+    args = parse_arguments(access)
 
     if args.function == 'add':
         add(args.path)
@@ -1147,14 +1040,6 @@ if __name__ == "__main__":
         create(args.new_name)
     elif args.function == "new_sample":
         new_sample(args.spl_name)
-    elif args.function == "reopen_excel":
-        reopen_excel(args.file_path)
-    elif args.function == "write_to_cell":
-        write_to_cell(args.file_name, args.sheet_name, args.cell_address, args.value)
-    elif args.function == "save_close_excel":
-        save_close_excel(args.file_path)
-    elif args.function == "update_SampleOverview":
-        update_SampleOverview(args.ID, args.spl)
     elif args.function == "tag":
         tag(args.ID, args.spl_name)
     elif args.function == "untag":
