@@ -32,6 +32,24 @@ YELLOW = '\033[93m'
 MAGENTA = '\033[95m'
 
 IDbase_dir = r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\IDbase"
+
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.txt")
+WRITE_COMMANDS = {
+    "add", "delete", "update", "update_readme", "comment", "edit_readme",
+    "create", "new_sample", "tag", "untag", "sync", "sync_all",
+    "update_SampleOverview", "write_to_cell", "save_close_excel", "reopen_excel",
+}
+
+def get_access_level():
+    if not os.path.exists(CONFIG_PATH):
+        print(f"{RED}No config file found. Please contact the owner to obtain access.{RESET}")
+        sys.exit(1)
+    with open(CONFIG_PATH, 'r') as f:
+        for line in f:
+            if line.strip().startswith("access:"):
+                return line.split(":", 1)[1].strip().lower()
+    print(f"{RED}Invalid config file. Please contact the owner.{RESET}")
+    sys.exit(1)
 SampleOverview_dir = r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\Sample Overview.xlsx"
 sheet_name = "Tabelle1"
 
@@ -1097,6 +1115,11 @@ def parse_arguments():
 if __name__ == "__main__":
 
     args = parse_arguments()
+
+    access = get_access_level()
+    if args.function in WRITE_COMMANDS and access != "owner":
+        print(f"{RED}This action is restricted to the owner. Only the owner can make changes to the database.{RESET}")
+        sys.exit(1)
 
     if args.function == 'add':
         add(args.path)
