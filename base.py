@@ -827,7 +827,8 @@ def info(query):
                                             growth_origin.append(f"EPI-{m.group(1)} (cleaved from {parent})")
 
                     keep = {"Type", "eSAE", "Ellipsometry", "Clean", "Spin-Coating",
-                            "Development", "HF 1", "HF 2", "NW Transfer", "Design", "Cleaved"}
+                            "Development", "HF 1", "HF 2", "NW Transfer", "Pick and Place",
+                            "NWs removed by Pick and Place", "Design", "Cleaved"}
                     print(f"\n{YELLOW}Sample Overview:{RESET}")
                     for origin in growth_origin:
                         print(f"  {YELLOW}Growth origin:{RESET} {origin}")
