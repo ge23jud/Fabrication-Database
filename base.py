@@ -714,18 +714,27 @@ def edit_readme(ID):
 
 def _get_excel_row(row_num):
     """Return (headers, row_data) dicts keyed by column letter, or (None, None) on failure."""
+    import tempfile
     paths_to_try = [
         SampleOverview_dir,
         r"\\nas.ads.mwn.de\tuze\wsi\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\Sample Overview Local.xlsx",
         r"C:\Users\ge23jud\OneDrive - TUM\Sample Overview.xlsx",
     ]
     for path in paths_to_try:
+        if not os.path.exists(path):
+            continue
         try:
-            wb = load_workbook(path, data_only=True)
-            ws = wb[sheet_name]
-            headers = {cell.column_letter: cell.value for cell in ws[1] if cell.value is not None}
-            row_data = {cell.column_letter: cell.value for cell in ws[row_num] if cell.value is not None}
-            return headers, row_data
+            with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
+                tmp_path = tmp.name
+            shutil.copy2(path, tmp_path)
+            try:
+                wb = load_workbook(tmp_path, data_only=True)
+                ws = wb[sheet_name]
+                headers = {cell.column_letter: cell.value for cell in ws[1] if cell.value is not None}
+                row_data = {cell.column_letter: cell.value for cell in ws[row_num] if cell.value is not None}
+                return headers, row_data
+            finally:
+                os.unlink(tmp_path)
         except Exception:
             continue
     return None, None
