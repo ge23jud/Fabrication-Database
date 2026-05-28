@@ -55,11 +55,12 @@ IDdir_dic = {"sem": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\16_SEM",
              "xrd": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\20_XRD",
              "tem": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\21_TEM",
              "mla": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\23_MLA",
-             "rie": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\24_RIE"}
+             "rie": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\24_RIE",
+             "dek": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\26_Dektak"}
 
-Sampledir_dic = {"sem": "SEM", "plm": "PL", "epi": "MBE", "elx": "Elionix", "mic": "Microscope", "xrd": "XRD", "tem": "TEM", "mla": "MLA", "rie": "RIE"}
+Sampledir_dic = {"sem": "SEM", "plm": "PL", "epi": "MBE", "elx": "Elionix", "mic": "Microscope", "xrd": "XRD", "tem": "TEM", "mla": "MLA", "rie": "RIE", "dek": "Dektak"}
 
-SampleOverview_column_dic = {"sem": "S", "plm": "T", "epi": "P", "elx": "H", "mic": "R", "xrd": "U", "tem": "V", "mla": "I", "rie": "M"}
+process_header_dic = {"sem": "SEM", "plm": "PL", "epi": "Growth", "elx": "Elionix", "mic": "Microscope", "xrd": "XRD", "tem": "TEM", "mla": "MLA", "rie": "RIE", "dek": "Dektak"}
 
 
 def extract_ID_from_path(path):
@@ -382,13 +383,6 @@ def get_sample_index(spl_name):
             index += 1
     print("No matching sample found")
 
-
-
-def get_column(ID):
-    for key in IDdir_dic.keys():
-        if key in ID:
-            column = SampleOverview_column_dic[key]
-    return column
 
 
 def create(new_name, initial_path = r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD"):
@@ -862,16 +856,18 @@ def info(query):
                 print(f"\n{YELLOW}Not tagged to any sample{RESET}")
 
             proc_key = next((k for k in IDdir_dic if k in proc_ID), None)
-            excel_col = SampleOverview_column_dic.get(proc_key)
-            if excel_col and tag_dict:
+            excel_header = process_header_dic.get(proc_key)
+            if excel_header and tag_dict:
                 excel_entries = []
                 for spl_name in tag_dict:
                     spl_idx = next((i for i, k in enumerate(samples_sorted) if spl_name in k), None)
                     if spl_idx is not None:
                         headers, row_data = _get_excel_row(spl_idx + 2)
-                        if headers is not None and excel_col in row_data:
-                            col_name = headers.get(excel_col, excel_col)
-                            excel_entries.append((spl_name, col_name, row_data[excel_col]))
+                        if headers is not None:
+                            col_by_header = {v: k for k, v in headers.items()}
+                            col = col_by_header.get(excel_header)
+                            if col and col in row_data:
+                                excel_entries.append((spl_name, excel_header, row_data[col]))
                 if excel_entries:
                     print(f"\n{YELLOW}Sample Overview:{RESET}")
                     for spl_name, col_name, cell_val in excel_entries:
