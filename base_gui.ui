@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect><x>0</x><y>0</y><width>1100</width><height>800</height></rect>
+  </property>
+  <property name="windowTitle">
+   <string>Fabrication Database</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="mainVLayout">
+    <item>
+     <widget class="QLabel" name="accessLabel">
+      <property name="font">
+       <font><bold>true</bold></font>
+      </property>
+      <property name="text">
+       <string>Access: —</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <widget class="QWidget" name="tabBrowse">
+       <attribute name="title">
+        <string>Browse</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="browseHLayout">
+        <item>
+         <layout class="QVBoxLayout" name="browseLeftVLayout">
+          <item>
+           <widget class="QLineEdit" name="searchEdit">
+            <property name="placeholderText">
+             <string>Filter list by ID substring...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QListWidget" name="idListWidget"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="refreshBtn">
+            <property name="text">
+             <string>Refresh List (ls)</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="browseRightVLayout">
+          <item>
+           <layout class="QHBoxLayout" name="browseButtonsHLayout">
+            <item>
+             <widget class="QPushButton" name="gotoBtn">
+              <property name="text">
+               <string>Open Folder (goto)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="inspectBtn">
+              <property name="text">
+               <string>Raw Readme (inspect)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="tagsBtn">
+              <property name="text">
+               <string>List Tags (tags)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="infoBtn">
+              <property name="text">
+               <string>Full Info (info)</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QTextBrowser" name="detailView"/>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="displayFilterHLayout">
+            <item>
+             <widget class="QLabel" name="displayLabel">
+              <property name="text">
+               <string>Display by type:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="typeCombo"/>
+            </item>
+            <item>
+             <widget class="QPushButton" name="displayBtn">
+              <property name="text">
+               <string>Display (display)</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabAddCreate">
+       <attribute name="title">
+        <string>Add / Create</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="addCreateVLayout">
+        <item>
+         <widget class="QGroupBox" name="groupAdd">
+          <property name="title">
+           <string>Add Existing Folder (add)</string>
+          </property>
+          <layout class="QHBoxLayout" name="groupAddHLayout">
+           <item>
+            <widget class="QLineEdit" name="addPathEdit">
+             <property name="placeholderText">
+              <string>Full path to folder, e.g. I:\...\20240715epi1780</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="addBrowseBtn">
+             <property name="text">
+              <string>Browse...</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="addSubmitBtn">
+             <property name="text">
+              <string>Add Entry</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupCreate">
+          <property name="title">
+           <string>Create — Rename &amp; Sort a Folder Into Its Process Directory (create)</string>
+          </property>
+          <layout class="QHBoxLayout" name="groupCreateHLayout">
+           <item>
+            <widget class="QLineEdit" name="createNameEdit">
+             <property name="placeholderText">
+              <string>New folder name incl. 16-char ID, e.g. 20240715epi1780_description</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="createSubmitBtn">
+             <property name="text">
+              <string>Select Folder &amp; Create</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupNewSample">
+          <property name="title">
+           <string>New Sample (new_sample)</string>
+          </property>
+          <layout class="QHBoxLayout" name="groupNewSampleHLayout">
+           <item>
+            <widget class="QLineEdit" name="newSampleEdit">
+             <property name="placeholderText">
+              <string>Sample name without date prefix, e.g. spl2407</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="newSampleSubmitBtn">
+             <property name="text">
+              <string>Create Sample</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <spacer name="addCreateSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size><width>20</width><height>40</height></size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabManage">
+       <attribute name="title">
+        <string>Manage Entry</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="manageVLayout">
+        <item>
+         <layout class="QHBoxLayout" name="manageIdHLayout">
+          <item>
+           <widget class="QLineEdit" name="manageIdEdit">
+            <property name="placeholderText">
+             <string>16-character entry ID, e.g. 20240715epi1780</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="manageLoadBtn">
+            <property name="text">
+             <string>Load Info</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTextBrowser" name="manageInfoView"/>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="manageButtonsHLayout">
+          <item>
+           <widget class="QPushButton" name="commentBtn">
+            <property name="text">
+             <string>Add Comment (comment)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="editReadmeBtn">
+            <property name="text">
+             <string>Edit Readme in Notepad (edit_readme)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="deleteBtn">
+            <property name="text">
+             <string>Delete Entry (delete)</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupUpdatePath">
+          <property name="title">
+           <string>Update Stored Path (update)</string>
+          </property>
+          <layout class="QHBoxLayout" name="groupUpdatePathHLayout">
+           <item>
+            <widget class="QLineEdit" name="newPathEdit">
+             <property name="placeholderText">
+              <string>New full path to the entry folder</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="newPathBrowseBtn">
+             <property name="text">
+              <string>Browse...</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="updatePathSubmitBtn">
+             <property name="text">
+              <string>Update Path</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabTagsSync">
+       <attribute name="title">
+        <string>Tags &amp; Sync</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="tagsSyncVLayout">
+        <item>
+         <widget class="QGroupBox" name="groupTag">
+          <property name="title">
+           <string>Tag / Untag a Sample (tag, untag)</string>
+          </property>
+          <layout class="QHBoxLayout" name="groupTagHLayout">
+           <item>
+            <widget class="QLineEdit" name="tagIdEdit">
+             <property name="placeholderText">
+              <string>Process ID, e.g. 20240715epi1780</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="tagSplEdit">
+             <property name="placeholderText">
+              <string>Sample name, e.g. spl2407</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="tagBtn">
+             <property name="text">
+              <string>Tag</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="untagBtn">
+             <property name="text">
+              <string>Untag</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupSync">
+          <property name="title">
+           <string>Sync Folders (sync, sync_all)</string>
+          </property>
+          <layout class="QHBoxLayout" name="groupSyncHLayout">
+           <item>
+            <widget class="QPushButton" name="syncBtn">
+             <property name="text">
+              <string>Sync This ID (uses ID field above)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="syncAllBtn">
+             <property name="text">
+              <string>Sync All</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupUntagged">
+          <property name="title">
+           <string>Untagged Processes (untagged)</string>
+          </property>
+          <layout class="QVBoxLayout" name="groupUntaggedVLayout">
+           <item>
+            <widget class="QPushButton" name="untaggedBtn">
+             <property name="text">
+              <string>Show Untagged Processes</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QListWidget" name="untaggedListWidget"/>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabMaintenance">
+       <attribute name="title">
+        <string>Maintenance</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="maintenanceVLayout">
+        <item>
+         <widget class="QLabel" name="maintenanceInfoLabel">
+          <property name="text">
+           <string>Database-wide maintenance. Results are written to the Activity Log below.</string>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="checkAllBtn">
+          <property name="text">
+           <string>Check All Paths (checkall)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="updateReadmeAllBtn">
+          <property name="text">
+           <string>Update All Readmes (update_readme)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="maintenanceSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size><width>20</width><height>40</height></size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="logLabel">
+      <property name="text">
+       <string>Activity Log</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QTextEdit" name="logView">
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+      <property name="maximumSize">
+       <size><width>16777215</width><height>160</height></size>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="clearLogBtn">
+      <property name="text">
+       <string>Clear Log</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect><x>0</x><y>0</y><width>1100</width><height>21</height></rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionRefresh"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionRefresh">
+   <property name="text">
+    <string>Refresh</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
