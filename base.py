@@ -311,8 +311,10 @@ class entry:
 
         if "des" in self.ID:
             print(f"{BLUE}Paste the creation code into the editor window and save when done{RESET}")
-            subprocess.run(['notepad', f"{self.path}\\{self.ID}_readme.txt"])
-            update_readme_single(self.ID)
+            gen_code_path = f"{self.path}\\Generation_Code.txt"
+            if not os.path.exists(gen_code_path):
+                open(gen_code_path, 'w').close()
+            subprocess.run(['notepad', gen_code_path])
 
         excluded = {"des", "sim", "scr", "ana", "spl"}
         if not any(ex in self.ID for ex in excluded):

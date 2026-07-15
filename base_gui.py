@@ -375,8 +375,10 @@ class MainWindow(QMainWindow):
                 "Paste the creation code into the Notepad window and save when done.",
             )
             import subprocess
-            subprocess.run(["notepad", f"{path}\\{ID}_readme.txt"])
-            core.update_readme_single(ID)
+            gen_code_path = f"{path}\\Generation_Code.txt"
+            if not os.path.exists(gen_code_path):
+                open(gen_code_path, "w").close()
+            subprocess.run(["notepad", gen_code_path])
 
         if not any(ex in ID for ex in EXCLUDED_TAG_TYPES):
             while True:
