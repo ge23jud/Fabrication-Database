@@ -31,6 +31,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QApplication,
     QFileDialog,
+    QFileSystemModel,
     QInputDialog,
     QListWidgetItem,
     QMainWindow,
@@ -92,6 +93,11 @@ class MainWindow(QMainWindow):
             ["all"] + sorted(core.IDdir_dic.keys()) + ["spl", "des", "sim", "scr", "ana"]
         )
 
+        self.fsModel = QFileSystemModel(self)
+        self.fsModel.setReadOnly(True)
+        self.fileTreeView.setModel(self.fsModel)
+        self.fileTreeView.setColumnWidth(0, 250)
+
         self._apply_access_control()
         self._connect_signals()
         self.refresh_id_list()
@@ -123,6 +129,7 @@ class MainWindow(QMainWindow):
         self.tagsBtn.clicked.connect(self._on_list_tags)
         self.infoBtn.clicked.connect(self._on_info)
         self.displayBtn.clicked.connect(self._on_display)
+        self.fileTreeView.doubleClicked.connect(self._on_file_tree_double_clicked)
 
         self.addBrowseBtn.clicked.connect(self._on_add_browse)
         self.addSubmitBtn.clicked.connect(self._on_add_submit)
@@ -243,6 +250,31 @@ class MainWindow(QMainWindow):
     def _show_info(self, ID):
         out = self._call_captured(core.info, self._to_info_query(ID))
         self.detailView.setHtml(ansi_to_html(out) or "No output.")
+        self._show_file_tree(ID)
+
+    def _show_file_tree(self, ID):
+        try:
+            base = self._load_base()
+        except Exception:
+            return
+
+        entry_path = base.get(ID, {}).get("path")
+        if not entry_path or not os.path.isdir(entry_path):
+            self.filePathLabel.setText(f'Path not available for "{ID}"')
+            self.fileTreeView.setRootIndex(self.fsModel.index(""))
+            return
+
+        self.filePathLabel.setText(entry_path)
+        root_index = self.fsModel.setRootPath(entry_path)
+        self.fileTreeView.setRootIndex(root_index)
+
+    def _on_file_tree_double_clicked(self, index):
+        path = self.fsModel.filePath(index)
+        if path and os.path.isfile(path):
+            try:
+                os.startfile(path)
+            except OSError as e:
+                QMessageBox.critical(self, "Could not open file", str(e))
 
     def _on_goto(self):
         ID = self._selected_id()
