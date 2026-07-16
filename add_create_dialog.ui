@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>AddCreateDialog</class>
+ <widget class="QDialog" name="AddCreateDialog">
+  <property name="geometry">
+   <rect><x>0</x><y>0</y><width>620</width><height>320</height></rect>
+  </property>
+  <property name="windowTitle">
+   <string>New Entry</string>
+  </property>
+  <layout class="QVBoxLayout" name="dialogVLayout">
+   <item>
+    <widget class="QGroupBox" name="groupAdd">
+     <property name="title">
+      <string>Add Existing Folder (add)</string>
+     </property>
+     <layout class="QHBoxLayout" name="groupAddHLayout">
+      <item>
+       <widget class="QLineEdit" name="addPathEdit">
+        <property name="placeholderText">
+         <string>Full path to folder, e.g. I:\...\20240715epi1780</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="addBrowseBtn">
+        <property name="text">
+         <string>Browse...</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="addSubmitBtn">
+        <property name="text">
+         <string>Add Entry</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupCreate">
+     <property name="title">
+      <string>Create — Rename &amp; Sort a Folder Into Its Process Directory (create)</string>
+     </property>
+     <layout class="QHBoxLayout" name="groupCreateHLayout">
+      <item>
+       <widget class="QLineEdit" name="createNameEdit">
+        <property name="placeholderText">
+         <string>New folder name incl. 16-char ID, e.g. 20240715epi1780_description</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="createSubmitBtn">
+        <property name="text">
+         <string>Select Folder &amp; Create</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupNewSample">
+     <property name="title">
+      <string>New Sample (new_sample)</string>
+     </property>
+     <layout class="QHBoxLayout" name="groupNewSampleHLayout">
+      <item>
+       <widget class="QLineEdit" name="newSampleEdit">
+        <property name="placeholderText">
+         <string>Sample name without date prefix, e.g. spl2407</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="newSampleSubmitBtn">
+        <property name="text">
+         <string>Create Sample</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="dialogSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size><width>20</width><height>40</height></size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QPushButton" name="closeBtn">
+     <property name="text">
+      <string>Close</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
