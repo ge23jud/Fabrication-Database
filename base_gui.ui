@@ -67,13 +67,26 @@
          </layout>
         </item>
         <item>
-         <layout class="QVBoxLayout" name="browseRightVLayout">
+         <layout class="QVBoxLayout" name="browseRightVLayout" stretch="0,1">
           <item>
            <layout class="QHBoxLayout" name="browseButtonsHLayout">
             <item>
              <widget class="QPushButton" name="gotoBtn">
+              <property name="maximumWidth">
+               <number>140</number>
+              </property>
               <property name="text">
                <string>Open Folder</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="activeIdLabel">
+              <property name="font">
+               <font><pointsize>14</pointsize><bold>true</bold></font>
+              </property>
+              <property name="text">
+               <string>No entry selected</string>
               </property>
              </widget>
             </item>
@@ -92,29 +105,36 @@
               <property name="rightMargin"><number>0</number></property>
               <property name="bottomMargin"><number>0</number></property>
               <item>
-               <widget class="QLabel" name="filePathLabel">
-                <property name="text">
-                 <string>Double-click an entry to browse its files.</string>
-                </property>
-                <property name="wordWrap">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
                <layout class="QHBoxLayout" name="fileViewControlsHLayout">
                 <item>
                  <widget class="QPushButton" name="fileUpBtn">
-                  <property name="text">
-                   <string>Up</string>
+                  <property name="maximumWidth">
+                   <number>40</number>
                   </property>
                  </widget>
                 </item>
                 <item>
-                 <widget class="QPushButton" name="fileViewToggleBtn">
-                  <property name="text">
-                   <string>Large Icons</string>
-                  </property>
+                 <widget class="QComboBox" name="fileViewModeCombo">
+                  <item>
+                   <property name="text">
+                    <string>List</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Small Icons</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Medium Icons</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Large Icons</string>
+                   </property>
+                  </item>
                  </widget>
                 </item>
                </layout>
@@ -130,7 +150,7 @@
                   <item>
                    <widget class="QTreeView" name="fileTreeView">
                     <property name="toolTip">
-                     <string>Double-click a file to open it. Double-click a folder to expand/collapse it.</string>
+                     <string>Double-click a file to open it. Double-click a folder to browse into it.</string>
                     </property>
                    </widget>
                   </item>

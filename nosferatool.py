@@ -41,6 +41,7 @@ from PyQt5.QtWidgets import (
     QListWidgetItem,
     QMainWindow,
     QMessageBox,
+    QStyle,
 )
 import qt_material  # must be imported after PyQt5
 
@@ -73,6 +74,12 @@ GROWTH_INITIAL_DIR = r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD"
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".gif"}
 THUMBNAIL_SIZE = QSize(256, 256)
+
+FILE_ICON_SIZES = {
+    "Small Icons": QSize(48, 48),
+    "Medium Icons": QSize(128, 128),
+    "Large Icons": QSize(256, 256),
+}
 
 
 def _auto_contrast_grayscale16(image):
@@ -371,15 +378,16 @@ class MainWindow(QMainWindow):
 
         self.fileTreeView.setModel(self.fsModel)
         self.fileTreeView.setColumnWidth(0, 250)
+        self.fileTreeView.setExpandsOnDoubleClick(False)
 
         self.fileIconView.setModel(self.fsModel)
         self.fileIconView.setViewMode(QListView.IconMode)
-        self.fileIconView.setIconSize(THUMBNAIL_SIZE)
-        self.fileIconView.setGridSize(QSize(THUMBNAIL_SIZE.width() + 30, THUMBNAIL_SIZE.height() + 30))
         self.fileIconView.setResizeMode(QListView.Adjust)
         self.fileIconView.setWrapping(True)
 
         self._file_view_top_root = None  # this entry's own folder; Up won't go above it
+        self.fileUpBtn.setIcon(self.style().standardIcon(QStyle.SP_ArrowBack))
+        self.fileUpBtn.setToolTip("Up one folder")
         self.fileUpBtn.setEnabled(False)
 
         self.detailView.setOpenLinks(False)
@@ -424,7 +432,7 @@ class MainWindow(QMainWindow):
         self.gotoBtn.clicked.connect(self._on_goto)
         self.fileTreeView.doubleClicked.connect(self._on_file_tree_double_clicked)
         self.fileIconView.doubleClicked.connect(self._on_file_icon_double_clicked)
-        self.fileViewToggleBtn.clicked.connect(self._on_file_view_toggle)
+        self.fileViewModeCombo.currentIndexChanged.connect(self._on_file_view_mode_changed)
         self.fileUpBtn.clicked.connect(self._on_file_view_up)
         self.detailView.anchorClicked.connect(self._on_detail_link_clicked)
 
@@ -546,6 +554,7 @@ class MainWindow(QMainWindow):
         return ID
 
     def _show_info(self, ID):
+        self.activeIdLabel.setText(ID)
         out = self._call_captured(core.info, self._to_info_query(ID))
         try:
             base = self._load_base()
@@ -572,7 +581,7 @@ class MainWindow(QMainWindow):
 
         entry_path = base.get(ID, {}).get("path")
         if not entry_path or not os.path.isdir(entry_path):
-            self.filePathLabel.setText(f'Path not available for "{ID}"')
+            self._log(f'Path not available for "{ID}"')
             empty_index = self.fsModel.index("")
             self.fileTreeView.setRootIndex(empty_index)
             self.fileIconView.setRootIndex(empty_index)
@@ -580,16 +589,30 @@ class MainWindow(QMainWindow):
             self.fileUpBtn.setEnabled(False)
             return
 
-        self.filePathLabel.setText(entry_path)
-        root_index = self.fsModel.setRootPath(entry_path)
-        self.fileTreeView.setRootIndex(root_index)
-        self.fileIconView.setRootIndex(root_index)
+        self._navigate_file_view(self.fileTreeView, entry_path)
+        self._navigate_file_view(self.fileIconView, entry_path)
         self._file_view_top_root = entry_path
         self.fileUpBtn.setEnabled(False)
 
+    def _current_file_view(self):
+        return self.fileTreeView if self.fileViewStack.currentWidget() is self.fileTreePage else self.fileIconView
+
+    def _navigate_file_view(self, view, path):
+        # setRootPath (not just setRootIndex) is needed so QFileSystemModel
+        # actually scans/watches this directory - without it, a freshly
+        # drilled-into subfolder can appear empty until something else
+        # happens to trigger a fetch.
+        root_index = self.fsModel.setRootPath(path)
+        view.setRootIndex(root_index)
+
     def _on_file_tree_double_clicked(self, index):
         path = self.fsModel.filePath(index)
-        if path and os.path.isfile(path):
+        if not path:
+            return
+        if os.path.isdir(path):
+            self._navigate_file_view(self.fileTreeView, path)
+            self._update_file_up_enabled()
+        elif os.path.isfile(path):
             try:
                 os.startfile(path)
             except OSError as e:
@@ -600,7 +623,7 @@ class MainWindow(QMainWindow):
         if not path:
             return
         if os.path.isdir(path):
-            self.fileIconView.setRootIndex(index)
+            self._navigate_file_view(self.fileIconView, path)
             self._update_file_up_enabled()
         elif os.path.isfile(path):
             try:
@@ -608,32 +631,38 @@ class MainWindow(QMainWindow):
             except OSError as e:
                 QMessageBox.critical(self, "Could not open file", str(e))
 
-    def _on_file_view_toggle(self):
-        showing_tree = self.fileViewStack.currentWidget() is self.fileTreePage
-        if showing_tree:
-            self.fileViewStack.setCurrentWidget(self.fileIconPage)
-            self.fileViewToggleBtn.setText("List View")
-        else:
+    def _on_file_view_mode_changed(self, index):
+        mode = self.fileViewModeCombo.itemText(index)
+        old_view = self._current_file_view()
+        if mode == "List":
             self.fileViewStack.setCurrentWidget(self.fileTreePage)
-            self.fileViewToggleBtn.setText("Large Icons")
+        else:
+            size = FILE_ICON_SIZES[mode]
+            self.fileIconView.setIconSize(size)
+            self.fileIconView.setGridSize(QSize(size.width() + 30, size.height() + 30))
+            self.fileViewStack.setCurrentWidget(self.fileIconPage)
+        new_view = self._current_file_view()
+        if new_view is not old_view:
+            self._navigate_file_view(new_view, self.fsModel.filePath(old_view.rootIndex()))
         self._update_file_up_enabled()
 
     def _on_file_view_up(self):
         if self._file_view_top_root is None:
             return
-        current_root = self.fileIconView.rootIndex()
+        view = self._current_file_view()
+        current_root = view.rootIndex()
         current_path = os.path.normcase(os.path.normpath(self.fsModel.filePath(current_root)))
         top_path = os.path.normcase(os.path.normpath(self._file_view_top_root))
         if current_path == top_path:
             return
-        self.fileIconView.setRootIndex(current_root.parent())
+        self._navigate_file_view(view, self.fsModel.filePath(current_root.parent()))
         self._update_file_up_enabled()
 
     def _update_file_up_enabled(self):
-        if self.fileViewStack.currentWidget() is not self.fileIconPage or self._file_view_top_root is None:
+        if self._file_view_top_root is None:
             self.fileUpBtn.setEnabled(False)
             return
-        current_path = os.path.normcase(os.path.normpath(self.fsModel.filePath(self.fileIconView.rootIndex())))
+        current_path = os.path.normcase(os.path.normpath(self.fsModel.filePath(self._current_file_view().rootIndex())))
         top_path = os.path.normcase(os.path.normpath(self._file_view_top_root))
         self.fileUpBtn.setEnabled(current_path != top_path)
 
