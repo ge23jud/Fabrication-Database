@@ -284,8 +284,12 @@ class AddCreateDialog(QDialog):
         if not spl_name:
             QMessageBox.warning(self, "Missing name", "Please provide a sample name.")
             return
-        self.main_window.gui_new_sample(spl_name)
+        cleaved_from = self.newSampleCleavedFromEdit.text().strip()
+        param = self.newSampleParamEdit.text().strip()
+        self.main_window.gui_new_sample(spl_name, cleaved_from, param)
         self.newSampleEdit.clear()
+        self.newSampleCleavedFromEdit.clear()
+        self.newSampleParamEdit.clear()
 
 
 class ManageEntryDialog(QDialog):
@@ -727,8 +731,12 @@ class MainWindow(QMainWindow):
         if not spl_name:
             QMessageBox.warning(self, "Missing name", "Please provide a sample name.")
             return
-        self.gui_new_sample(spl_name)
+        cleaved_from = self.newSampleCleavedFromEdit.text().strip()
+        param = self.newSampleParamEdit.text().strip()
+        self.gui_new_sample(spl_name, cleaved_from, param)
         self.newSampleEdit.clear()
+        self.newSampleCleavedFromEdit.clear()
+        self.newSampleParamEdit.clear()
 
     def gui_add_entry(self, path):
         """Reimplementation of base.entry() / base.add() using Qt dialogs instead of input()."""
@@ -834,7 +842,7 @@ class MainWindow(QMainWindow):
 
         self.gui_add_entry(new_path)
 
-    def gui_new_sample(self, spl_name):
+    def gui_new_sample(self, spl_name, cleaved_from="", param=""):
         """Reimplementation of base.new_sample() calling gui_add_entry instead of add()."""
         try:
             base = self._load_base()
@@ -853,6 +861,16 @@ class MainWindow(QMainWindow):
             os.makedirs(path + "\\" + core.Sampledir_dic[key])
 
         self.gui_add_entry(path)
+
+        if cleaved_from:
+            ID, _ = core.extract_ID_from_path(path)
+            try:
+                base = self._load_base()
+            except Exception:
+                return
+            if ID in base:
+                out = self._call_captured(core.cleave, ID, cleaved_from, param)
+                self._append_log_ansi(out)
 
     # ------------------------------------------------------------------ #
     # Manage Entry tab: update_readme_single (view), comment, edit_readme,

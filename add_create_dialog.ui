@@ -76,6 +76,20 @@
        </widget>
       </item>
       <item>
+       <widget class="QLineEdit" name="newSampleCleavedFromEdit">
+        <property name="placeholderText">
+         <string>Cleaved From (optional, single sample name)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="newSampleParamEdit">
+        <property name="placeholderText">
+         <string>Pitch/Dose/Diameter (optional)</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="newSampleSubmitBtn">
         <property name="text">
          <string>Create Sample</string>

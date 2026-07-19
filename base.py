@@ -60,8 +60,6 @@ IDdir_dic = {"sem": r"I:\e24\SQN\Researchers\Haubmann Benjamin\01_PhD\16_SEM",
 
 Sampledir_dic = {"sem": "SEM", "plm": "PL", "epi": "MBE", "elx": "Elionix", "mic": "Microscope", "xrd": "XRD", "tem": "TEM", "mla": "MLA", "rie": "RIE", "dek": "Dektak"}
 
-process_header_dic = {"sem": "SEM", "plm": "PL", "epi": "Growth", "elx": "Elionix", "mic": "Microscope", "xrd": "XRD", "tem": "TEM", "mla": "MLA", "rie": "RIE", "dek": "Dektak"}
-
 
 def extract_ID_from_path(path):
     ID = path.split("\\")[-1][:16]
@@ -281,6 +279,37 @@ def list_tags(ID):
             print(f"  {MAGENTA}{spl_name}{RESET} → {copy_path} [{status}]")
 
 
+def cleave(ID, parent_name, param=""):
+    with open(IDbase_dir, 'rb') as file:
+        base = pickle.load(file)
+
+    if not ID_exists(ID, base):
+        print(f"{RED}Invalid ID{RESET}")
+        return
+
+    if any(p["sample"] == parent_name for p in base[ID].get("cleave_parents", [])):
+        print(f"{YELLOW}\"{ID}\" is already linked as cleaved from \"{parent_name}\"{RESET}")
+        return
+
+    parent_key = None
+    for key in base.keys():
+        if "spl" in key and parent_name in key:
+            parent_key = key
+            break
+
+    if parent_key is None:
+        print(f"{RED}Sample \"{parent_name}\" not found in database{RESET}")
+        return
+
+    base[ID].setdefault("cleave_parents", []).append({"sample": parent_name, "param": param})
+    base[parent_key].setdefault("cleave_children", []).append({"sample": ID, "param": param})
+
+    with open(IDbase_dir, 'wb') as file:
+        pickle.dump(base, file)
+
+    print(f"{GREEN}\"{ID}\" linked as cleaved from \"{parent_key}\"{RESET}")
+
+
 class entry:
 
     def __init__(self, path):
@@ -355,6 +384,14 @@ def new_sample(spl_name):
             os.makedirs(path + "\\" + subfolder_name)
 
         add(path)
+
+        ID, _ = extract_ID_from_path(path)
+        print(f"{BLUE}Cleaved from which sample? Enter a single sample name, or press Enter to skip:{RESET}")
+        parent_input = input().strip()
+        if parent_input:
+            print(f"{BLUE}Pitch/Dose/Diameter (optional additional info):{RESET}")
+            param_input = input().strip()
+            cleave(ID, parent_input, param_input)
 
 
 def convert_date_format(date_str):
@@ -780,6 +817,20 @@ def info(query):
             else:
                 print(f"\n{YELLOW}No processes tagged to this sample{RESET}")
 
+            cleave_parents = entry_data.get("cleave_parents", [])
+            if cleave_parents:
+                print(f"\n{YELLOW}Cleaved from:{RESET}")
+                for rel in cleave_parents:
+                    suffix = f" — {rel['param']}" if rel.get('param') else ""
+                    print(f"  {MAGENTA}{rel['sample']}{RESET}{suffix}")
+
+            cleave_children = entry_data.get("cleave_children", [])
+            if cleave_children:
+                print(f"\n{YELLOW}Cleaved into:{RESET}")
+                for rel in cleave_children:
+                    suffix = f" — {rel['param']}" if rel.get('param') else ""
+                    print(f"  {MAGENTA}{rel['sample']}{RESET}{suffix}")
+
             spl_idx = next((i for i, k in enumerate(samples_sorted) if query in k), None)
             if spl_idx is not None:
                 headers, row_data = _get_excel_row(spl_idx + 2)
@@ -853,27 +904,9 @@ def info(query):
                 print(f"\n{YELLOW}Tagged to:{RESET}")
                 for spl_name, copy_path in tag_dict.items():
                     copy_status = f"{GREEN}ok{RESET}" if os.path.exists(copy_path) else f"{RED}missing{RESET}"
-                    print(f"  {MAGENTA}{spl_name}{RESET} → {copy_path} [{copy_status}]")
+                    print(f"  {MAGENTA}{spl_name}{RESET} [{copy_status}]")
             else:
                 print(f"\n{YELLOW}Not tagged to any sample{RESET}")
-
-            proc_key = next((k for k in IDdir_dic if k in proc_ID), None)
-            excel_header = process_header_dic.get(proc_key)
-            if excel_header and tag_dict:
-                excel_entries = []
-                for spl_name in tag_dict:
-                    spl_idx = next((i for i, k in enumerate(samples_sorted) if spl_name in k), None)
-                    if spl_idx is not None:
-                        headers, row_data = _get_excel_row(spl_idx + 2)
-                        if headers is not None:
-                            col_by_header = {v: k for k, v in headers.items()}
-                            col = col_by_header.get(excel_header)
-                            if col and col in row_data:
-                                excel_entries.append((spl_name, excel_header, row_data[col]))
-                if excel_entries:
-                    print(f"\n{YELLOW}Sample Overview:{RESET}")
-                    for spl_name, col_name, cell_val in excel_entries:
-                        print(f"  {MAGENTA}{spl_name}{RESET} — {col_name}: {str(cell_val).strip()}")
 
             if "epi" in proc_ID:
                 epi_m = re.search(r'epi[-]?(\d+)', proc_ID)
