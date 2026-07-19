@@ -12,7 +12,7 @@ reimplemented here with Qt dialogs (QMessageBox / QInputDialog) instead of
 console input, but otherwise mirror base.py's logic and read/write the same
 pickle database so the CLI and GUI stay fully interchangeable.
 
-Run with: python base_gui.py
+Run with: python nosferatool.py
 """
 
 import base as core
