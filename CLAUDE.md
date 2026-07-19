@@ -13,7 +13,7 @@ A Windows CLI tool (`base.py`) for managing lab samples and fabrication process 
 
 ## ID format
 16-character IDs: `YYYYMMDD` + type prefix + number (e.g. `20240715epi1780`, `20240715spl2407`).
-Process types: `sem`, `plm`, `epi`, `elx`, `mic`, `xrd`, `tem`, `mla`, `rie`.
+Process types: `sem`, `plm`, `epi`, `elx`, `mic`, `xrd`, `tem`, `mla`, `rie`, `dek`.
 Special (excluded from tagging): `spl` (sample), `des`, `sim`, `scr`, `ana`.
 
 ## Excel structure (Tabelle1)
