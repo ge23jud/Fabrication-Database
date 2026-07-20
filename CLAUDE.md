@@ -31,9 +31,16 @@ Note: "Cleaved From"/"Cleaved" here are Excel-only, read-only growth-tracing fie
 ## Sample cleave relationships (`cleave_parents` / `cleave_children`)
 DB-native, bidirectional link recorded when a sample is physically cleaved from another. `cleave(ID, parent_name, param="")` resolves `parent_name` against sample keys (same substring convention as `tag()`), then appends `{"sample": ..., "param": ...}` to the child's `cleave_parents` and the parent's `cleave_children`. `param` is free text (e.g. pitch/dose/diameter or which piece — "SEM", "Transfer p8"). Both `new_sample()` (CLI, interactive prompt) and the GUI's New Sample forms (`newSampleCleavedFromEdit`/`newSampleParamEdit` fields) call this same function. Dedup-safe to call repeatedly (checks for an existing matching parent entry first).
 
+## Sample NW-transfer relationships (`transfer_parents` / `transfer_children`)
+DB-native, bidirectional link recorded when NWs grown on one sample are transferred to another — same shape and conventions as the cleave relationship above, just a separate function/key-pair: `transfer(ID, parent_name, param="")` appends `{"sample": ..., "param": ...}` to the child's `transfer_parents` and the parent's `transfer_children`, resolving `parent_name` the same substring way. `param` is free text (pitch/dose/diameter). Settable both at sample creation (`new_sample()` CLI prompt; GUI New Sample forms' `newSampleTransferFromEdit`/`newSampleTransferParamEdit` fields) and later on an already-existing sample via the GUI's Edit/Manage Entry dialog (`transferFromEdit`/`transferParamEdit`/`transferLinkSubmitBtn` — no CLI equivalent for the "existing sample" path). Note this is distinct from the pre-existing, read-only "NW Transfer" column in the Excel Sample Overview (used only to annotate growth origin in `info()`) — that's an Excel-scraped string, not this DB-native link.
+
+**Cleave-time inheritance**: `cleave(ID, parent_name, param="")` also copies each of the parent's `transfer_parents` entries onto the newly cleaved `ID` (and mirrors `ID` into that donor's `transfer_children`) — e.g. if spl2402 has NWs transferred from spl2401 and is cleaved into spl2403/spl2404, both inherit spl2401 as a transfer parent. Only `transfer_parents` propagates this way, not `transfer_children`.
+
+**Historical backfill**: existing samples in the DB were backfilled once from the Excel Sample Overview's "NW Transfer" column (cells of the form `"... to splXXXX (p8)"` on the donor's row), so some pre-existing entries have `transfer_parents`/`transfer_children` set without ever having gone through `transfer()` interactively.
+
 ## `info` command
 `python base.py info spl2407` or `python base.py info epi1780`
-- **Sample mode**: DB info/comments → tagged processes → cleave relationships (`Cleaved from:`/`Cleaved into:`, DB-native, only shown if non-empty) → Sample Overview (filtered columns) → growth origin
+- **Sample mode**: DB info/comments → tagged processes → cleave relationships (`Cleaved from:`/`Cleaved into:`, DB-native, only shown if non-empty) → NW-transfer relationships (`Transferred from:`/`Transferred to:`, DB-native, only shown if non-empty) → Sample Overview (filtered columns) → growth origin
 - **Process mode**: DB info/comments → tagged samples (name + status only, no filepath) — no Sample Overview section for process-type IDs
 - **Growth origin** (sample mode, Excel-derived): checks P (growth wafer itself), Q with "from" keyword (NW transfer), C (cleaved from parent → looks up parent's P column)
 - Multiline Excel cells joined with ` | `

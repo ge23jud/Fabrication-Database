@@ -286,10 +286,14 @@ class AddCreateDialog(QDialog):
             return
         cleaved_from = self.newSampleCleavedFromEdit.text().strip()
         param = self.newSampleParamEdit.text().strip()
-        self.main_window.gui_new_sample(spl_name, cleaved_from, param)
+        transfer_from = self.newSampleTransferFromEdit.text().strip()
+        transfer_param = self.newSampleTransferParamEdit.text().strip()
+        self.main_window.gui_new_sample(spl_name, cleaved_from, param, transfer_from, transfer_param)
         self.newSampleEdit.clear()
         self.newSampleCleavedFromEdit.clear()
         self.newSampleParamEdit.clear()
+        self.newSampleTransferFromEdit.clear()
+        self.newSampleTransferParamEdit.clear()
 
 
 class ManageEntryDialog(QDialog):
@@ -313,6 +317,7 @@ class ManageEntryDialog(QDialog):
         self.deleteBtn.clicked.connect(self._on_delete)
         self.newPathBrowseBtn.clicked.connect(self._on_new_path_browse)
         self.updatePathSubmitBtn.clicked.connect(self._on_update_path_submit)
+        self.transferLinkSubmitBtn.clicked.connect(self._on_transfer_link_submit)
         self.closeBtn.clicked.connect(self.close)
 
     def _on_manage_load(self):
@@ -365,6 +370,22 @@ class ManageEntryDialog(QDialog):
             return
         self.main_window.gui_update_path(path)
         self.newPathEdit.clear()
+
+    def _on_transfer_link_submit(self):
+        ID = self.manageIdEdit.text().strip()
+        if not ID:
+            QMessageBox.warning(self, "Missing ID", "Please enter an entry ID.")
+            return
+        transfer_from = self.transferFromEdit.text().strip()
+        if not transfer_from:
+            QMessageBox.warning(self, "Missing sample", "Please provide the sample name transferred from.")
+            return
+        param = self.transferParamEdit.text().strip()
+        out = self.main_window._call_captured(core.transfer, ID, transfer_from, param)
+        self.main_window._append_log_ansi(out)
+        self.transferFromEdit.clear()
+        self.transferParamEdit.clear()
+        self._on_manage_load()
 
 
 class MainWindow(QMainWindow):
@@ -452,6 +473,7 @@ class MainWindow(QMainWindow):
         self.deleteBtn.clicked.connect(self._on_delete)
         self.newPathBrowseBtn.clicked.connect(self._on_new_path_browse)
         self.updatePathSubmitBtn.clicked.connect(self._on_update_path_submit)
+        self.transferLinkSubmitBtn.clicked.connect(self._on_transfer_link_submit)
 
         self.tagBtn.clicked.connect(self._on_tag)
         self.untagBtn.clicked.connect(self._on_untag)
@@ -733,10 +755,14 @@ class MainWindow(QMainWindow):
             return
         cleaved_from = self.newSampleCleavedFromEdit.text().strip()
         param = self.newSampleParamEdit.text().strip()
-        self.gui_new_sample(spl_name, cleaved_from, param)
+        transfer_from = self.newSampleTransferFromEdit.text().strip()
+        transfer_param = self.newSampleTransferParamEdit.text().strip()
+        self.gui_new_sample(spl_name, cleaved_from, param, transfer_from, transfer_param)
         self.newSampleEdit.clear()
         self.newSampleCleavedFromEdit.clear()
         self.newSampleParamEdit.clear()
+        self.newSampleTransferFromEdit.clear()
+        self.newSampleTransferParamEdit.clear()
 
     def gui_add_entry(self, path):
         """Reimplementation of base.entry() / base.add() using Qt dialogs instead of input()."""
@@ -842,7 +868,7 @@ class MainWindow(QMainWindow):
 
         self.gui_add_entry(new_path)
 
-    def gui_new_sample(self, spl_name, cleaved_from="", param=""):
+    def gui_new_sample(self, spl_name, cleaved_from="", param="", transfer_from="", transfer_param=""):
         """Reimplementation of base.new_sample() calling gui_add_entry instead of add()."""
         try:
             base = self._load_base()
@@ -862,15 +888,19 @@ class MainWindow(QMainWindow):
 
         self.gui_add_entry(path)
 
-        if cleaved_from:
+        if cleaved_from or transfer_from:
             ID, _ = core.extract_ID_from_path(path)
             try:
                 base = self._load_base()
             except Exception:
                 return
             if ID in base:
-                out = self._call_captured(core.cleave, ID, cleaved_from, param)
-                self._append_log_ansi(out)
+                if cleaved_from:
+                    out = self._call_captured(core.cleave, ID, cleaved_from, param)
+                    self._append_log_ansi(out)
+                if transfer_from:
+                    out = self._call_captured(core.transfer, ID, transfer_from, transfer_param)
+                    self._append_log_ansi(out)
 
     # ------------------------------------------------------------------ #
     # Manage Entry tab: update_readme_single (view), comment, edit_readme,
@@ -927,6 +957,22 @@ class MainWindow(QMainWindow):
             return
         self.gui_update_path(path)
         self.newPathEdit.clear()
+
+    def _on_transfer_link_submit(self):
+        ID = self.manageIdEdit.text().strip()
+        if not ID:
+            QMessageBox.warning(self, "Missing ID", "Please enter an entry ID.")
+            return
+        transfer_from = self.transferFromEdit.text().strip()
+        if not transfer_from:
+            QMessageBox.warning(self, "Missing sample", "Please provide the sample name transferred from.")
+            return
+        param = self.transferParamEdit.text().strip()
+        out = self._call_captured(core.transfer, ID, transfer_from, param)
+        self._append_log_ansi(out)
+        self.transferFromEdit.clear()
+        self.transferParamEdit.clear()
+        self._on_manage_load()
 
     def gui_comment(self, ID):
         """Reimplementation of base.comment() using QInputDialog instead of input()."""

@@ -304,10 +304,54 @@ def cleave(ID, parent_name, param=""):
     base[ID].setdefault("cleave_parents", []).append({"sample": parent_name, "param": param})
     base[parent_key].setdefault("cleave_children", []).append({"sample": ID, "param": param})
 
+    for rel in base[parent_key].get("transfer_parents", []):
+        if any(p["sample"] == rel["sample"] for p in base[ID].get("transfer_parents", [])):
+            continue
+        base[ID].setdefault("transfer_parents", []).append({"sample": rel["sample"], "param": rel["param"]})
+        donor_key = None
+        for key in base.keys():
+            if "spl" in key and rel["sample"] in key:
+                donor_key = key
+                break
+        if donor_key is not None:
+            base[donor_key].setdefault("transfer_children", []).append({"sample": ID, "param": rel["param"]})
+        print(f"{GREEN}\"{ID}\" also inherited transfer link from \"{donor_key or rel['sample']}\"{RESET}")
+
     with open(IDbase_dir, 'wb') as file:
         pickle.dump(base, file)
 
     print(f"{GREEN}\"{ID}\" linked as cleaved from \"{parent_key}\"{RESET}")
+
+
+def transfer(ID, parent_name, param=""):
+    with open(IDbase_dir, 'rb') as file:
+        base = pickle.load(file)
+
+    if not ID_exists(ID, base):
+        print(f"{RED}Invalid ID{RESET}")
+        return
+
+    if any(p["sample"] == parent_name for p in base[ID].get("transfer_parents", [])):
+        print(f"{YELLOW}\"{ID}\" is already linked as transferred from \"{parent_name}\"{RESET}")
+        return
+
+    parent_key = None
+    for key in base.keys():
+        if "spl" in key and parent_name in key:
+            parent_key = key
+            break
+
+    if parent_key is None:
+        print(f"{RED}Sample \"{parent_name}\" not found in database{RESET}")
+        return
+
+    base[ID].setdefault("transfer_parents", []).append({"sample": parent_name, "param": param})
+    base[parent_key].setdefault("transfer_children", []).append({"sample": ID, "param": param})
+
+    with open(IDbase_dir, 'wb') as file:
+        pickle.dump(base, file)
+
+    print(f"{GREEN}\"{ID}\" linked as transferred from \"{parent_key}\"{RESET}")
 
 
 class entry:
@@ -392,6 +436,13 @@ def new_sample(spl_name):
             print(f"{BLUE}Pitch/Dose/Diameter (optional additional info):{RESET}")
             param_input = input().strip()
             cleave(ID, parent_input, param_input)
+
+        print(f"{BLUE}Transferred NWs from which sample? Enter a single sample name, or press Enter to skip:{RESET}")
+        transfer_input = input().strip()
+        if transfer_input:
+            print(f"{BLUE}Pitch/Dose/Diameter (optional additional info):{RESET}")
+            transfer_param_input = input().strip()
+            transfer(ID, transfer_input, transfer_param_input)
 
 
 def convert_date_format(date_str):
@@ -828,6 +879,20 @@ def info(query):
             if cleave_children:
                 print(f"\n{YELLOW}Cleaved into:{RESET}")
                 for rel in cleave_children:
+                    suffix = f" — {rel['param']}" if rel.get('param') else ""
+                    print(f"  {MAGENTA}{rel['sample']}{RESET}{suffix}")
+
+            transfer_parents = entry_data.get("transfer_parents", [])
+            if transfer_parents:
+                print(f"\n{YELLOW}Transferred from:{RESET}")
+                for rel in transfer_parents:
+                    suffix = f" — {rel['param']}" if rel.get('param') else ""
+                    print(f"  {MAGENTA}{rel['sample']}{RESET}{suffix}")
+
+            transfer_children = entry_data.get("transfer_children", [])
+            if transfer_children:
+                print(f"\n{YELLOW}Transferred to:{RESET}")
+                for rel in transfer_children:
                     suffix = f" — {rel['param']}" if rel.get('param') else ""
                     print(f"  {MAGENTA}{rel['sample']}{RESET}{suffix}")
 

@@ -244,34 +244,60 @@
           <property name="title">
            <string>New Sample (new_sample)</string>
           </property>
-          <layout class="QHBoxLayout" name="groupNewSampleHLayout">
+          <layout class="QVBoxLayout" name="groupNewSampleVLayout">
            <item>
-            <widget class="QLineEdit" name="newSampleEdit">
-             <property name="placeholderText">
-              <string>Sample name without date prefix, e.g. spl2407</string>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout" name="groupNewSampleNameHLayout">
+             <item>
+              <widget class="QLineEdit" name="newSampleEdit">
+               <property name="placeholderText">
+                <string>Sample name without date prefix, e.g. spl2407</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="newSampleSubmitBtn">
+               <property name="text">
+                <string>Create Sample</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
            <item>
-            <widget class="QLineEdit" name="newSampleCleavedFromEdit">
-             <property name="placeholderText">
-              <string>Cleaved From (optional, single sample name)</string>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout" name="groupNewSampleCleaveHLayout">
+             <item>
+              <widget class="QLineEdit" name="newSampleCleavedFromEdit">
+               <property name="placeholderText">
+                <string>Cleaved From (optional, single sample name)</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="newSampleParamEdit">
+               <property name="placeholderText">
+                <string>Pitch/Dose/Diameter (optional)</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
            <item>
-            <widget class="QLineEdit" name="newSampleParamEdit">
-             <property name="placeholderText">
-              <string>Pitch/Dose/Diameter (optional)</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="newSampleSubmitBtn">
-             <property name="text">
-              <string>Create Sample</string>
-             </property>
-            </widget>
+            <layout class="QHBoxLayout" name="groupNewSampleTransferHLayout">
+             <item>
+              <widget class="QLineEdit" name="newSampleTransferFromEdit">
+               <property name="placeholderText">
+                <string>Transferred NWs From (optional, single sample name)</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="newSampleTransferParamEdit">
+               <property name="placeholderText">
+                <string>Pitch/Dose/Diameter (optional)</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>
@@ -363,6 +389,36 @@
             <widget class="QPushButton" name="updatePathSubmitBtn">
              <property name="text">
               <string>Update Path</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupTransferLink">
+          <property name="title">
+           <string>Add NW Transfer Link</string>
+          </property>
+          <layout class="QHBoxLayout" name="groupTransferLinkHLayout">
+           <item>
+            <widget class="QLineEdit" name="transferFromEdit">
+             <property name="placeholderText">
+              <string>Transferred NWs From (sample name)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="transferParamEdit">
+             <property name="placeholderText">
+              <string>Pitch/Dose/Diameter (optional)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="transferLinkSubmitBtn">
+             <property name="text">
+              <string>Add Transfer Link</string>
              </property>
             </widget>
            </item>
