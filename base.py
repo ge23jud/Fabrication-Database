@@ -862,7 +862,6 @@ def info(query):
                     process_type = get_process_subdir(proc_ID) or "?"
                     path_status = f"{GREEN}ok{RESET}" if os.path.exists(proc_data['path']) else f"{RED}missing{RESET}"
                     print(f"\n  {MAGENTA}{proc_ID}{RESET} ({process_type}) [{path_status}]")
-                    print(f"  {YELLOW}Path:{RESET} {proc_data['path']}")
                     if proc_data['info'].strip():
                         print(f"  {YELLOW}Info:{RESET} {proc_data['info']}")
             else:

@@ -36,7 +36,7 @@ DB-native, bidirectional link recorded when NWs grown on one sample are transfer
 
 **Cleave-time inheritance**: `cleave(ID, parent_name, param="")` also copies each of the parent's `transfer_parents` entries onto the newly cleaved `ID` (and mirrors `ID` into that donor's `transfer_children`) — e.g. if spl2402 has NWs transferred from spl2401 and is cleaved into spl2403/spl2404, both inherit spl2401 as a transfer parent. Only `transfer_parents` propagates this way, not `transfer_children`.
 
-**Historical backfill**: existing samples in the DB were backfilled once from the Excel Sample Overview's "NW Transfer" column (cells of the form `"... to splXXXX (p8)"` on the donor's row), so some pre-existing entries have `transfer_parents`/`transfer_children` set without ever having gone through `transfer()` interactively.
+**Historical backfill**: existing samples in the DB were backfilled from the Excel Sample Overview's "NW Transfer" column in two passes, so some pre-existing entries have `transfer_parents`/`transfer_children` set without ever having gone through `transfer()` interactively — (1) direct donor cells of the form `"... to splXXXX (p8)"` on the giver's own row, and (2) receiver-only cells of the form `"... from Epi-XXXX (p8)"`, resolved by matching the epi number against whichever `spl` sample's own "Growth" column names that epi (i.e. the physical growth wafer sample), then linking that sample as the donor. A few "from Epi-XXXX" cells have no matching grower tracked in the DB (e.g. spl2402/Epi-1733) and were left unlinked.
 
 ## `info` command
 `python base.py info spl2407` or `python base.py info epi1780`
